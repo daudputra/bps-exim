@@ -22,11 +22,11 @@ spec:
             crawler: bps
           containers:
           - name: bps-exim-export
-            image: 192.168.202.50/crawler/smart-crawler/bps_exim
+            image: 192.168.202.50/crawler/smart-crawler/bps_exim:latest
             imagePullPolicy: IfNotPresent
             command: ["python", "main.py", "--headless", "--data", "ekspor"]
           - name: bps-exim-import
-            image: 192.168.202.50/crawler/smart-crawler/bps_exim
+            image: 192.168.202.50/crawler/smart-crawler/bps_exim:latest
             command: ["python", "main.py", "--headless", "--data", "impor"]
             imagePullPolicy: IfNotPresent
           restartPolicy: Never
