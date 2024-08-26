@@ -1,11 +1,11 @@
 apiVersion: batch/v1beta1
 kind: CronJob
 metadata:
-  name: bps-exim 
+  name: bps-exim
+  namespace: nextgen
   labels:
     app: smart-crawler
-    kind: bps-exim 
-    namespace: nextgen
+    kind: bps-exim
 spec:
   schedule: "0 10 1 * *"
   concurrencyPolicy: Allow
@@ -16,17 +16,17 @@ spec:
         metadata:
           labels:
             app: smart-crawler
-            kind: bps-exim 
+            kind: bps-exim
         spec:
+          nodeSelector:
+            crawler: bps
           containers:
           - name: bps-exim-export
             image: 192.168.202.50/crawler/smart-crawler/bps_exim
+            imagePullPolicy: IfNotPresent
             command: ["python", "main.py", "--headless", "--data", "ekspor"]
-            nodeSelector:
-              crawler: bps
           - name: bps-exim-import
             image: 192.168.202.50/crawler/smart-crawler/bps_exim
             command: ["python", "main.py", "--headless", "--data", "impor"]
-            nodeSelector:
-              crawler: bps
+            imagePullPolicy: IfNotPresent
           restartPolicy: Never

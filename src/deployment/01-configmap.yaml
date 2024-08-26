@@ -1,5 +1,4 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: config-bps-exim
-  namespace: nextgen
+  name: config-next-gen-bps-exim

@@ -1,4 +1,4 @@
-from exim.src.controller.main_controller import Controller
+from src.controller.main_controller import Controller
 
 import asyncio
 import argparse
