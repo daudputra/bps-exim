@@ -57,6 +57,8 @@ class Controller():
                 #? tutup banner
                 await self._close_bannerpage(page)
 
+                await asyncio.sleep(5)
+
                 #? donwload data export import nasional
                 await self.get_data_exim_nasional(page, '//html/body/div[2]/div[2]/div[2]/div[2]/div/div[1]/div/div[1]/h4', '//html/body/div[2]/div[2]/div[2]/div[2]/div/div[1]/div/div[1]/button', 'Data Ekspor Impor Nasional Bulanan') #Bulanan 
                 await self.get_data_exim_nasional(page, '//html/body/div[2]/div[2]/div[2]/div[2]/div/div[2]/div/div/div/div[1]/h4', '//html/body/div[2]/div[2]/div[2]/div[2]/div/div[2]/div/div/div/div[1]/button', 'Data Ekspor Impor Nasional HS 2 Digit') #HS 2 digit
@@ -825,7 +827,7 @@ class Controller():
 
             # == json ==
             try:
-                save_json = SaveJson(self.url_page, self.title_page, range_data, self.deskirpsi, '', '', data, path_data_raw)
+                save_json = SaveJson(self.url_page, title, range_data, self.deskirpsi, '', '', data, path_data_raw)
                 await save_json.save_json_local(f'{filename}.json', path_name, 'json' )
                 await log_message('info', 'logs/info.log', f'{self.path_s3}/{path_name}/json/{filename}.json')
             except Exception as e:
