@@ -1,4 +1,4 @@
-aiofiles==24.1.0
+aiofiles==24.1.0 
 colorlog==6.8.2
 playwright==1.45.0
 s3fs==2023.12.2

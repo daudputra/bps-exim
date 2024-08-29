@@ -9,8 +9,6 @@ import os
 import traceback
 
 
-#! FUNGSI UPLOAD S3
-
 class Controller():
     def __init__(self, url_page, path_s3, headless=True, miniwin=False, uploads3=True, **kwargs) -> None:
         self.path_s3 = path_s3
@@ -20,6 +18,7 @@ class Controller():
         self.uploads3 = uploads3
         self.type_data = kwargs.get('data', None)
         self.cusindex_hs = kwargs.get('indexhs', 1)
+        self.cusagregasi = kwargs.get('agr', None)
 
         # ? item text
         self.type_data_text = None
@@ -82,22 +81,39 @@ class Controller():
                     self.type_data_text = type_data
                     await log_message('DEBUG', 'logs/debug.log', f'{self.type_data_text}')
 
-                    # ? pilih agregasi
-                    all_agregasi = ["Menurut Kode HS", "Menurut Pelabuhan", "Menurut Negara"]
-                    for agregasi in all_agregasi:
 
-                        await self._agregasi(page, agregasi)
 
-                        self.agregasi_text = agregasi
-                        await log_message('DEBUG', 'logs/debug.log', f'{self.agregasi_text}')
 
-                        if agregasi == "Menurut Kode HS":
-                            await self.menurut_kodehs(page)
-                        elif agregasi == "Menurut Pelabuhan":
-                            await self.menurut_pelabuhan(page)
-                        elif agregasi == "Menurut Negara":
-                            await self.menurut_negara(page)
+                    mappings = {
+                        "pelabuhan": ("Menurut Pelabuhan", self.menurut_pelabuhan),
+                        "kodehs": ("Menurut Kode HS", self.menurut_kodehs),
+                        "negara": ("Menurut Negara", self.menurut_negara)
+                    }
+                    
+                    if self.cusagregasi in mappings:
+                        cusagregasi, method = mappings[self.cusagregasi]
+                        self.agregasi_text = cusagregasi
+                        await self._agregasi(page, cusagregasi)
+                        print(self.cusagregasi)
+                        await method(page)
+                    
 
+                    else:
+                        # ? pilih agregasi
+                        all_agregasi = ["Menurut Kode HS", "Menurut Pelabuhan", "Menurut Negara"]
+                        for agregasi in all_agregasi:
+
+                            await self._agregasi(page, agregasi)
+
+                            self.agregasi_text = agregasi
+                            await log_message('DEBUG', 'logs/debug.log', f'{self.agregasi_text}')
+
+                            if agregasi == "Menurut Kode HS":
+                                await self.menurut_kodehs(page)
+                            elif agregasi == "Menurut Pelabuhan":
+                                await self.menurut_pelabuhan(page)
+                            elif agregasi == "Menurut Negara":
+                                await self.menurut_negara(page)
 
 
             except TimeoutError:
@@ -263,6 +279,9 @@ class Controller():
             if index_negara != 0:
                 await page.locator('#ss > div.mt-4.rounded-lg.bg-white.w-full.flex-col.justify-start.items-start.gap-4.inline-flex.p-4 > div:nth-child(6) > div > div > div > div.css-1wy0on6 > div:nth-child(1)').click()# ? X
             await page.locator('#ss > div.mt-4.rounded-lg.bg-white.w-full.flex-col.justify-start.items-start.gap-4.inline-flex.p-4 > div:nth-child(6) > div > div > div > div.css-hlgwow > div.css-19bb58m').click() #? input negara
+
+            if index_negara == 1:
+                await asyncio.sleep(2)
 
             # if index_negara == 3: return False
 
@@ -482,7 +501,7 @@ class Controller():
                         break
 
                     index_negara += 1
-                    await log_message('DEBUG', 'logs/debug.log', f"{self.type_data_text} - {self.agregasi_text} - {self.tahun_text} - {self.pelabuhan_text}")
+                    await log_message('DEBUG', 'logs/debug.log', f"{self.type_data_text} - {self.agregasi_text} - {self.tahun_text} - {self.negara_text}")
 
                     check_data_negara =  await self.check_data_table(page)
                     if check_data_negara == True:
