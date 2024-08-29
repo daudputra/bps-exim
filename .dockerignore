@@ -3,9 +3,5 @@
 .pytest_cache/
 __pycache__/
 
-*.venv
-*.venv.*
-venv.*
-
 data
 logs
