@@ -19,6 +19,7 @@ class Controller():
         self.type_data = kwargs.get('data', None)
         self.cusindex_hs = kwargs.get('indexhs', 1)
         self.cusagregasi = kwargs.get('agr', None)
+        self.cusjenishs = kwargs.get('jenishs', None)
 
         # ? item text
         self.type_data_text = None
@@ -158,9 +159,6 @@ class Controller():
 
             await page.locator('#ss > div.mt-4.rounded-lg.bg-white.w-full.flex-col.justify-start.items-start.gap-4.inline-flex.p-4 > div:nth-child(3) > div > div > div > div.css-hlgwow > div.css-19bb58m').click() #? input tahun
 
-            # if index_tahun == 1:
-            #     return False
-
             try:
                 tahun_locator = page.locator(f'#react-select-5-option-{index_tahun}')
                 await tahun_locator.wait_for(timeout=3000)
@@ -198,8 +196,6 @@ class Controller():
             # await asyncio.sleep(2)
             if index_kode_hs == 1:
                 await asyncio.sleep(2)
-
-            # if index_kode_hs == 3: return False
 
             try:
                 kode_hs_locator = page.locator(f'//html/body/div[2]/div[2]/div[2]/div[1]/div/div[2]/div[4]/div[2]/div/div[2]/div/div[{index_kode_hs}]')
@@ -247,8 +243,6 @@ class Controller():
                 await page.locator('#ss > div.mt-4.rounded-lg.bg-white.w-full.flex-col.justify-start.items-start.gap-4.inline-flex.p-4 > div:nth-child(5) > div > div > div > div.css-1wy0on6 > div:nth-child(1)').click() #? X
             await page.locator('#ss > div.mt-4.rounded-lg.bg-white.w-full.flex-col.justify-start.items-start.gap-4.inline-flex.p-4 > div:nth-child(5) > div > div > div > div.css-hlgwow > div.css-19bb58m').click() #? input pelabuhan
             
-            # if index_pelabuhan == 3:
-            #     return False
 
             try:
                 pelabuhan_locator =  page.locator(f'#react-select-6-option-{index_pelabuhan}')
@@ -285,7 +279,6 @@ class Controller():
             if index_negara == 1:
                 await asyncio.sleep(2)
 
-            # if index_negara == 3: return False
 
             try:
                 negara_locator =  page.locator(f'#react-select-7-option-{index_negara}')
@@ -350,8 +343,13 @@ class Controller():
 
     async def menurut_kodehs(self, page):
         try:
-            all_hs = ["HS 2 Digit", "HS Full"]
-            for jenis_hs in all_hs:
+
+            if 'digit' in self.cusjenishs.lower():
+                self.cusjenishs = ["HS 2 Digit"]
+            elif 'full' in self.cusjenishs.lower():
+                self.cusjenishs = ["HS Full"]
+        
+            for jenis_hs in self.cusjenishs:
                 self.jenis_hs_text = jenis_hs
                 await self._jenis_hs(page, jenis_hs)
                 

@@ -26,9 +26,6 @@ async def upload_to_s3(local_path: str, raw_path: str):
         if not s3.exists(raw_path):
             await log_message('ERROR', 'logs/error.log', 'File upload failed')
 
-        #     print('File upload successfully')
-        # else:
-        #     print('File upload failed')
 
     except Exception as e:
         await log_message('ERROR', 'logs/error.log', f'error upload to s3 == {e}')
