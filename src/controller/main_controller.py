@@ -1,6 +1,7 @@
 from src.helper.save_json import SaveJson
 from src.helper.uploadS3 import upload_to_s3
 from src.helper.logging import log_message
+from src.helper.tele_bot import Erris
 
 from playwright.async_api import async_playwright
 
@@ -64,7 +65,7 @@ class Controller():
                 await self.get_data_exim_nasional(page, '//html/body/div[2]/div[2]/div[2]/div[2]/div/div[1]/div/div[1]/h4', '//html/body/div[2]/div[2]/div[2]/div[2]/div/div[1]/div/div[1]/button', 'Data Ekspor Impor Nasional Bulanan') #Bulanan 
                 await self.get_data_exim_nasional(page, '//html/body/div[2]/div[2]/div[2]/div[2]/div/div[2]/div/div/div/div[1]/h4', '//html/body/div[2]/div[2]/div[2]/div[2]/div/div[2]/div/div/div/div[1]/button', 'Data Ekspor Impor Nasional HS 2 Digit') #HS 2 digit
 
-                # #? json item
+                #? json item
                 self.title_page = await page.locator(r'body > div.mx-4.md\:mx-8.lg\:mx-16.xl\:mx-32.py-8 > div.w-full > div.flex.flex-col.flex-nowrap.justify-start.gap-x-8.gap-y-2.rounded-xl > div > h1').inner_text()
                 self.sub_title = await page.locator('//html/body/div[2]/div[2]/div[1]/p').inner_text()
                 self.deskirpsi = await page.locator('#ss > div.w-full.flex-col.justify-start.items-start.flex > div > div').inner_text()
@@ -97,10 +98,8 @@ class Controller():
                         cusagregasi, method = mappings[self.cusagregasi]
                         self.agregasi_text = cusagregasi
                         await self._agregasi(page, cusagregasi)
-                        print(self.cusagregasi)
                         await method(page)
                     
-
                     else:
                         # ? pilih agregasi
                         all_agregasi = ["Menurut Kode HS", "Menurut Pelabuhan", "Menurut Negara"]
@@ -242,7 +241,6 @@ class Controller():
             if index_pelabuhan != 0 :
                 await page.locator('#ss > div.mt-4.rounded-lg.bg-white.w-full.flex-col.justify-start.items-start.gap-4.inline-flex.p-4 > div:nth-child(5) > div > div > div > div.css-1wy0on6 > div:nth-child(1)').click() #? X
             await page.locator('#ss > div.mt-4.rounded-lg.bg-white.w-full.flex-col.justify-start.items-start.gap-4.inline-flex.p-4 > div:nth-child(5) > div > div > div > div.css-hlgwow > div.css-19bb58m').click() #? input pelabuhan
-            
 
             try:
                 pelabuhan_locator =  page.locator(f'#react-select-6-option-{index_pelabuhan}')
@@ -265,6 +263,7 @@ class Controller():
         
         except Exception as e:
             await log_message('ERROR', 'logs/error.log', f'Error _pelabuhan: {e}')
+
             return False
 
 
@@ -472,7 +471,7 @@ class Controller():
                                                                 await log_message('INFO', self._logs_folder_exim(), f's3://ai-pipeline-raw-data/data/data_statistics/bps/data_ekspor_impor_nasional/{type_data_json}/{agregasi_json}/{jenis_hs_json}/{self.tahun_text}/{kode_hs_json}/{pelabuhan_json}/{negara_json}/json/{filename}_(kg).xlsx')
                                                                 await log_message('INFO', self._logs_folder_exim(), f's3://ai-pipeline-raw-data/data/data_statistics/bps/data_ekspor_impor_nasional/{type_data_json}/{agregasi_json}/{jenis_hs_json}/{self.tahun_text}/{kode_hs_json}/{pelabuhan_json}/{negara_json}/json/{filename}_(us$).xlsx')
                                                             except Exception as e:
-                                                                print(f"Failed to upload {local_path} to {s3_path}: {e}")
+                                                                await Erris().send_message(f"Failed to upload {local_path} to {s3_path}: {e}")
                                                                 log_message('ERROR', 'logs/error.log', f'error upload s3 menurut negara: {e}')
 
         except Exception as e:
@@ -579,7 +578,7 @@ class Controller():
                                                 await log_message('INFO', self._logs_folder_exim(), f's3://ai-pipeline-raw-data/data/data_statistics/bps/data_ekspor_impor_nasional/{type_data_json}/{agregasi_json}/{self.tahun_text}/{negara_json}/json/{filename}_(kg).xlsx' )
                                                 await log_message('INFO', self._logs_folder_exim(), f's3://ai-pipeline-raw-data/data/data_statistics/bps/data_ekspor_impor_nasional/{type_data_json}/{agregasi_json}/{self.tahun_text}/{negara_json}/json/{filename}_(us$).xlsx' )
                                             except Exception as e:
-                                                print(f"Failed to upload {local_path} to {s3_path}: {e}")
+                                                await Erris().send_message(f"Failed to upload {local_path} to {s3_path}: {e}")
                                                 log_message('ERROR', 'logs/error.log', f'error upload s3 menurut negara: {e}')
         except Exception as e:
             await log_message('ERROR', 'logs/error.log', f'error menurut_negara == {e}')
@@ -666,7 +665,6 @@ class Controller():
                                     try:
                                         save_json = SaveJson(self.url_page, self.title_page, self.tahun_text, self.deskirpsi, '', '', data, path_data_raw, self.sub_title)
                                         await save_json.save_json_local(f'{filename.lower()}.json', type_data_json, agregasi_json, self.tahun_text, pelabuhan_json, 'json' )
-                                        await log_message('INFO', self._logs_folder_exim() ,f's3://ai-pipeline-raw-data/data/data_statistics/bps/data_ekspor_impor_nasional/{type_data_json}/{agregasi_json}/{self.tahun_text}/{pelabuhan_json}/json/{filename.lower()}.json' )
                                     except Exception as e:
                                         await log_message('ERROR', 'logs/error.log', f'error save {filename}.json' == {e})
 
@@ -686,7 +684,7 @@ class Controller():
                                                 await log_message('INFO', self._logs_folder_exim() ,f's3://ai-pipeline-raw-data/data/data_statistics/bps/data_ekspor_impor_nasional/{type_data_json}/{agregasi_json}/{self.tahun_text}/{pelabuhan_json}/json/{filename}_(kg).xlsx')
                                                 await log_message('INFO', self._logs_folder_exim() ,f's3://ai-pipeline-raw-data/data/data_statistics/bps/data_ekspor_impor_nasional/{type_data_json}/{agregasi_json}/{self.tahun_text}/{pelabuhan_json}/json/{filename}_(us$).xlsx')
                                             except Exception as e:
-                                                print(f"Failed to upload {local_path} to {s3_path}: {e}")
+                                                await Erris().send_message(f"Failed to upload {local_path} to {s3_path}: {e}")
                                                 log_message('ERROR', 'logs/error.log', f'error upload s3 menurut pelabuhan: {e}')
 
         except Exception as e:
@@ -698,9 +696,13 @@ class Controller():
     async def _close_bannerpage(self, page):
         """tutup popup banner pada saat masuk ke dalam page"""
         close_button = page.locator('//html/body/div[5]/div/div/div/div/div/div/div[2]/button')
-        await close_button.wait_for(timeout=3000)
-        if await close_button.count() > 0:
-            await close_button.click()
+
+        if not await close_button.is_visible():
+            pass
+        else:
+            await close_button.wait_for(timeout=3000)
+            if await close_button.count() > 0:
+                await close_button.click()
 
 
 
@@ -735,6 +737,10 @@ class Controller():
 
     async def _get_files(self, page, download_path, base_filename):
         try:
+
+            # ? div load table
+            await page.wait_for_selector('//html/body/div[2]/div[2]/div[2]/div[1]/div/div[3]/div/div[@class="skeleton-box"]', state='detached', timeout=300000)
+
             os.makedirs(download_path, exist_ok=True)
 
             name_dropdowns = ["Berat / Net Weight (KG)", "Nilai / Net Value (US $)"]
@@ -761,10 +767,21 @@ class Controller():
 
                 file_path = os.path.join(download_path, filename)
                 await download.save_as(file_path)
+
+                try:
+                    await asyncio.wait_for(self._check_file_local(file_path), timeout=60)
+                except asyncio.TimeoutError:
+                    await log_message('ERROR', 'logs/error.log', f'File {filename} belum ditemukan setelah 30 detik.')
+
                 await page.locator('#ss > div.mt-4.rounded-lg.bg-white.w-full.flex-col.justify-start.items-start.gap-4.inline-flex.p-4 > div.w-full.py-4 > button').click()
 
         except Exception as e:
-            log_message('ERROR', 'logs/error.log', f'error get xlsx files: {e}')
+            await log_message('ERROR', 'logs/error.log', f'error get xlsx files: {e}')
+
+
+    async def _check_file_local(self, file_path):
+        while not os.path.exists(file_path):
+            await asyncio.sleep(1)
 
 
 
@@ -841,7 +858,7 @@ class Controller():
                     await upload_to_s3(local_path_json, f'ai-pipeline-raw-data/data/data_statistics/bps/data_ekspor_impor_nasional/{path_name}/json/{filename}.json')
                     await upload_to_s3(local_path_xlsx, f'ai-pipeline-raw-data/data/data_statistics/bps/data_ekspor_impor_nasional/{path_name}/xlsx/{filename}.xlsx')
                 except Exception as e:
-                    log_message('ERROR', 'logs/error.log', f'errror upload s3 _get_data_exim_nasional == {e}')
+                    await log_message('ERROR', 'logs/error.log', f'errror upload s3 _get_data_exim_nasional == {e}')
 
 
         except Exception as e:
