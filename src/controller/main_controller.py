@@ -61,8 +61,8 @@ class Controller():
                 await asyncio.sleep(5)
 
                 #? donwload data export import nasional
-                # await self.get_data_exim_nasional(page, '//html/body/div[2]/div[2]/div[2]/div[2]/div/div[1]/div/div[1]/h4', '//html/body/div[2]/div[2]/div[2]/div[2]/div/div[1]/div/div[1]/button', 'Data Ekspor Impor Nasional Bulanan') #Bulanan 
-                # await self.get_data_exim_nasional(page, '//html/body/div[2]/div[2]/div[2]/div[2]/div/div[2]/div/div/div/div[1]/h4', '//html/body/div[2]/div[2]/div[2]/div[2]/div/div[2]/div/div/div/div[1]/button', 'Data Ekspor Impor Nasional HS 2 Digit') #HS 2 digit
+                await self.get_data_exim_nasional(page, '//html/body/div[2]/div[2]/div[2]/div[2]/div/div[1]/div/div[1]/h4', '//html/body/div[2]/div[2]/div[2]/div[2]/div/div[1]/div/div[1]/button', 'Data Ekspor Impor Nasional Bulanan') #Bulanan 
+                await self.get_data_exim_nasional(page, '//html/body/div[2]/div[2]/div[2]/div[2]/div/div[2]/div/div/div/div[1]/h4', '//html/body/div[2]/div[2]/div[2]/div[2]/div/div[2]/div/div/div/div[1]/button', 'Data Ekspor Impor Nasional HS 2 Digit') #HS 2 digit
 
                 #? json item
                 self.title_page = await page.locator(r'body > div.mx-4.md\:mx-8.lg\:mx-16.xl\:mx-32.py-8 > div.w-full > div.flex.flex-col.flex-nowrap.justify-start.gap-x-8.gap-y-2.rounded-xl > div > h1').inner_text()
