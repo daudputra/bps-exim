@@ -1,7 +1,6 @@
 from src.helper.save_json import SaveJson
 from src.helper.uploadS3 import upload_to_s3
 from src.helper.logging import log_message
-from src.helper.tele_bot import Erris
 
 from playwright.async_api import async_playwright
 
@@ -11,7 +10,7 @@ import traceback
 
 
 class Controller():
-    def __init__(self, url_page, path_s3, headless=True, miniwin=False, uploads3=True, **kwargs) -> None:
+    def __init__(self, url_page, path_s3, headless=True, miniwin=False, uploads3=False, **kwargs) -> None:
         self.path_s3 = path_s3
         self.url_page = url_page
         self.headless = headless
@@ -62,8 +61,8 @@ class Controller():
                 await asyncio.sleep(5)
 
                 #? donwload data export import nasional
-                await self.get_data_exim_nasional(page, '//html/body/div[2]/div[2]/div[2]/div[2]/div/div[1]/div/div[1]/h4', '//html/body/div[2]/div[2]/div[2]/div[2]/div/div[1]/div/div[1]/button', 'Data Ekspor Impor Nasional Bulanan') #Bulanan 
-                await self.get_data_exim_nasional(page, '//html/body/div[2]/div[2]/div[2]/div[2]/div/div[2]/div/div/div/div[1]/h4', '//html/body/div[2]/div[2]/div[2]/div[2]/div/div[2]/div/div/div/div[1]/button', 'Data Ekspor Impor Nasional HS 2 Digit') #HS 2 digit
+                # await self.get_data_exim_nasional(page, '//html/body/div[2]/div[2]/div[2]/div[2]/div/div[1]/div/div[1]/h4', '//html/body/div[2]/div[2]/div[2]/div[2]/div/div[1]/div/div[1]/button', 'Data Ekspor Impor Nasional Bulanan') #Bulanan 
+                # await self.get_data_exim_nasional(page, '//html/body/div[2]/div[2]/div[2]/div[2]/div/div[2]/div/div/div/div[1]/h4', '//html/body/div[2]/div[2]/div[2]/div[2]/div/div[2]/div/div/div/div[1]/button', 'Data Ekspor Impor Nasional HS 2 Digit') #HS 2 digit
 
                 #? json item
                 self.title_page = await page.locator(r'body > div.mx-4.md\:mx-8.lg\:mx-16.xl\:mx-32.py-8 > div.w-full > div.flex.flex-col.flex-nowrap.justify-start.gap-x-8.gap-y-2.rounded-xl > div > h1').inner_text()
@@ -149,8 +148,6 @@ class Controller():
         await asyncio.sleep(1)
 
 
-
-
     async def _tahun(self, page, index_tahun):
         try:
             if index_tahun != 0 :
@@ -188,17 +185,20 @@ class Controller():
 
 
     async def _kode_hs(self, page, index_kode_hs, jenis_hs):
+        if self.cusindex_hs != 1:
+            timeout_cus = 3000
+        else:
+            timeout_cus = 10000
         try:
             if index_kode_hs != self.cusindex_hs:
                 await page.locator('#ss > div.mt-4.rounded-lg.bg-white.w-full.flex-col.justify-start.items-start.gap-4.inline-flex.p-4 > div:nth-child(4) > div.w-full.mt-2 > div > div > div.css-1wy0on6 > div:nth-child(1)').click()
             await page.locator('#ss > div.mt-4.rounded-lg.bg-white.w-full.flex-col.justify-start.items-start.gap-4.inline-flex.p-4 > div:nth-child(4) > div.w-full.mt-2 > div > div > div.css-hlgwow > div.css-19bb58m, #ss > div.mt-4.rounded-lg.bg-white.w-full.flex-col.justify-start.items-start.gap-4.inline-flex.p-4 > div:nth-child(4) > div.w-full.mt-2 > div > div > div.css-1dyz3mf > div.css-19bb58m' ).click()
-            # await asyncio.sleep(2)
             if index_kode_hs == 1:
                 await asyncio.sleep(2)
 
             try:
                 kode_hs_locator = page.locator(f'//html/body/div[2]/div[2]/div[2]/div[1]/div/div[2]/div[4]/div[2]/div/div[2]/div/div[{index_kode_hs}]')
-                await kode_hs_locator.wait_for(timeout=10000)
+                await kode_hs_locator.wait_for(timeout=timeout_cus)
                 if await kode_hs_locator.is_visible():
                     kode_hs_text = await kode_hs_locator.inner_text()
                     if jenis_hs == "HS Full":
@@ -207,7 +207,32 @@ class Controller():
 
                 self.kode_hs_text = kode_hs_text
                 await log_message('DEBUG', 'logs/debug.log', self.kode_hs_text)
-            except TimeoutError: await log_message('ERROR', 'logs/error.log', f'Error pada select {kode_hs_text}')
+
+            except Exception as e:
+                while True:
+                    
+                    
+                    count = await page.locator('//html/body/div[2]/div[2]/div[2]/div[1]/div/div[2]/div[4]/div[2]/div/div[2]/div/div').count()
+                    if count != 0:
+                        last_index = count - 1
+                        locators = page.locator(f'//html/body/div[2]/div[2]/div[2]/div[1]/div/div[2]/div[4]/div[2]/div/div[2]/div/div[{last_index}]')
+                        await locators.scroll_into_view_if_needed()
+                        await locators.wait_for(state='visible')
+                        await asyncio.sleep(3)
+
+
+                        if await kode_hs_locator.is_visible():
+                            kode_hs_text = await kode_hs_locator.inner_text()
+                            if jenis_hs == "HS Full":
+                                kode_hs_text = kode_hs_text.replace('HS2022 - ','').replace(',','').replace('.','').replace('≤','').replace('≥','').replace('<','').replace('>','')
+                            break
+                        else: kode_hs_text = None
+
+                        self.kode_hs_text = kode_hs_text
+                        await log_message('DEBUG', 'logs/debug.log', self.kode_hs_text)
+                    else:
+                        print("No elements found to scroll")
+                        break
 
             if kode_hs_text == None:
                 await page.locator('#ss > div.mt-4.rounded-lg.bg-white.w-full.flex-col.justify-start.items-start.gap-4.inline-flex.p-4 > div:nth-child(4) > div.w-full.mt-2 > div > div > div.css-hlgwow > div.css-19bb58m, #ss > div.mt-4.rounded-lg.bg-white.w-full.flex-col.justify-start.items-start.gap-4.inline-flex.p-4 > div:nth-child(4) > div.w-full.mt-2 > div > div > div.css-1dyz3mf > div.css-19bb58m' ).click()
@@ -226,7 +251,7 @@ class Controller():
 
             await kode_hs_locator.click()
             await page.locator('#ss > div.mt-4.rounded-lg.bg-white.w-full.flex-col.justify-start.items-start.gap-4.inline-flex.p-4 > div:nth-child(4) > div.w-full.mt-2 > div > div > div.css-1dyz3mf > div.css-19bb58m, #ss > div.mt-4.rounded-lg.bg-white.w-full.flex-col.justify-start.items-start.gap-4.inline-flex.p-4 > div:nth-child(4) > div.w-full.mt-2 > div > div > div.css-hlgwow > div.css-19bb58m').click()
-            await asyncio.sleep(1)            
+            await asyncio.sleep(1)  
             return True
 
         except Exception as e:
@@ -462,7 +487,7 @@ class Controller():
                                                     ]
 
 
-                                                    if self.uploads3:
+                                                    if self.uploads3 == True:
                                                         for local_path, s3_path in zip(local_paths, path_data_raw):
                                                             try:
                                                                 print(f"Uploading to {s3_path}")
@@ -471,7 +496,6 @@ class Controller():
                                                                 await log_message('INFO', self._logs_folder_exim(), f's3://ai-pipeline-raw-data/data/data_statistics/bps/data_ekspor_impor_nasional/{type_data_json}/{agregasi_json}/{jenis_hs_json}/{self.tahun_text}/{kode_hs_json}/{pelabuhan_json}/{negara_json}/json/{filename}_(kg).xlsx')
                                                                 await log_message('INFO', self._logs_folder_exim(), f's3://ai-pipeline-raw-data/data/data_statistics/bps/data_ekspor_impor_nasional/{type_data_json}/{agregasi_json}/{jenis_hs_json}/{self.tahun_text}/{kode_hs_json}/{pelabuhan_json}/{negara_json}/json/{filename}_(us$).xlsx')
                                                             except Exception as e:
-                                                                await Erris().send_message(f"Failed to upload {local_path} to {s3_path}: {e}")
                                                                 log_message('ERROR', 'logs/error.log', f'error upload s3 menurut negara: {e}')
 
         except Exception as e:
@@ -569,7 +593,7 @@ class Controller():
                                     ]
 
 
-                                    if self.uploads3:
+                                    if self.uploads3 == True:
                                         for local_path, s3_path in zip(local_paths, path_data_raw):
                                             try:
                                                 print(f"Uploading to {s3_path}")
@@ -578,7 +602,6 @@ class Controller():
                                                 await log_message('INFO', self._logs_folder_exim(), f's3://ai-pipeline-raw-data/data/data_statistics/bps/data_ekspor_impor_nasional/{type_data_json}/{agregasi_json}/{self.tahun_text}/{negara_json}/json/{filename}_(kg).xlsx' )
                                                 await log_message('INFO', self._logs_folder_exim(), f's3://ai-pipeline-raw-data/data/data_statistics/bps/data_ekspor_impor_nasional/{type_data_json}/{agregasi_json}/{self.tahun_text}/{negara_json}/json/{filename}_(us$).xlsx' )
                                             except Exception as e:
-                                                await Erris().send_message(f"Failed to upload {local_path} to {s3_path}: {e}")
                                                 log_message('ERROR', 'logs/error.log', f'error upload s3 menurut negara: {e}')
         except Exception as e:
             await log_message('ERROR', 'logs/error.log', f'error menurut_negara == {e}')
@@ -675,7 +698,7 @@ class Controller():
                                         f"data/{type_data_json}/{agregasi_json}/{self.tahun_text}/{pelabuhan_json}/xlsx/{filename}_(us$).xlsx"
                                     ]
                                     
-                                    if self.uploads3:
+                                    if self.uploads3 == True:
                                         for local_path, s3_path in zip(local_paths, path_data_raw):
                                             try:
                                                 print(f"Uploading to {s3_path}")
@@ -684,7 +707,6 @@ class Controller():
                                                 await log_message('INFO', self._logs_folder_exim() ,f's3://ai-pipeline-raw-data/data/data_statistics/bps/data_ekspor_impor_nasional/{type_data_json}/{agregasi_json}/{self.tahun_text}/{pelabuhan_json}/json/{filename}_(kg).xlsx')
                                                 await log_message('INFO', self._logs_folder_exim() ,f's3://ai-pipeline-raw-data/data/data_statistics/bps/data_ekspor_impor_nasional/{type_data_json}/{agregasi_json}/{self.tahun_text}/{pelabuhan_json}/json/{filename}_(us$).xlsx')
                                             except Exception as e:
-                                                await Erris().send_message(f"Failed to upload {local_path} to {s3_path}: {e}")
                                                 log_message('ERROR', 'logs/error.log', f'error upload s3 menurut pelabuhan: {e}')
 
         except Exception as e:
@@ -737,23 +759,22 @@ class Controller():
 
     async def _get_files(self, page, download_path, base_filename):
         try:
-
-            # ? div load table
+            # Tunggu hingga elemen load table hilang
             await page.wait_for_selector('//html/body/div[2]/div[2]/div[2]/div[1]/div/div[3]/div/div[@class="skeleton-box"]', state='detached', timeout=300000)
 
             os.makedirs(download_path, exist_ok=True)
 
             name_dropdowns = ["Berat / Net Weight (KG)", "Nilai / Net Value (US $)"]
-            
+
             await asyncio.sleep(2)
             for nama in name_dropdowns:
+                # Klik pada dropdown dan pilih opsi
                 await page.locator('//html/body/div[2]/div[2]/div[2]/div[1]/div/div[3]/div/div[2]/table/tbody/tr[2]/td[1]/div/div').click()
-                # await page.get_by_role("button", name=nama, exact=True).click()
                 button = page.locator(f'//*[@id="ss"]/div[3]/div/div[2]/table/tbody/tr[2]/td[1]/div/div[2]/div[contains(text(), "{nama}")]')
                 await button.click()
-                await button.click()
-                
                 await asyncio.sleep(1)
+
+                # Mulai download dan tunggu hingga selesai
                 async with page.expect_download() as download_info:
                     await page.locator("#ss").get_by_role("button", name="Unduh").click()
                     await asyncio.sleep(2)
@@ -766,22 +787,34 @@ class Controller():
                     filename = f'{base_filename}_(kg).xlsx'
 
                 file_path = os.path.join(download_path, filename)
-                await download.save_as(file_path)
 
-                try:
-                    await asyncio.wait_for(self._check_file_local(file_path), timeout=60)
-                except asyncio.TimeoutError:
-                    await log_message('ERROR', 'logs/error.log', f'File {filename} belum ditemukan setelah 30 detik.')
+                for attempt in range(3):
+                    try:
+                        await download.save_as(file_path)
 
+                        try:
+                            await asyncio.wait_for(self._check_file_local(file_path), timeout=60)
+                            print('File ditemukan, melanjutkan...')
+                            break
+                        except asyncio.TimeoutError:
+                            await log_message('ERROR', 'logs/error.log', f'File {filename} belum ditemukan setelah 60 detik pada percobaan {attempt + 1}.')
+                    
+                    except Exception as e:
+                        await log_message('ERROR', 'logs/error.log', f'Error saat mendownload file {filename} pada percobaan {attempt + 1}: {e}')
+                    
+                    await asyncio.sleep(5)
+
+                # Klik tombol lanjut
                 await page.locator('#ss > div.mt-4.rounded-lg.bg-white.w-full.flex-col.justify-start.items-start.gap-4.inline-flex.p-4 > div.w-full.py-4 > button').click()
-
+        
         except Exception as e:
-            await log_message('ERROR', 'logs/error.log', f'error get xlsx files: {e}')
+            await log_message('ERROR', 'logs/error.log', f'Error saat mengambil file: {e}')
 
 
     async def _check_file_local(self, file_path):
         while not os.path.exists(file_path):
             await asyncio.sleep(1)
+
 
 
 
@@ -844,7 +877,8 @@ class Controller():
             try:
                 save_json = SaveJson(self.url_page, title, range_data, self.deskirpsi, '', '', data, path_data_raw)
                 await save_json.save_json_local(f'{filename}.json', path_name, 'json' )
-                await log_message('info', 'logs/info.log', f'{self.path_s3}/{path_name}/json/{filename}.json')
+                if self.uploads3 == True:
+                    await log_message('info', 'logs/info.log', f'{self.path_s3}/{path_name}/json/{filename}.json')
             except Exception as e:
                 await log_message('ERROR', 'logs/error.log', f'error save {filename}.json == {e}')
 
@@ -853,7 +887,7 @@ class Controller():
             local_path_xlsx = f'data/{path_name}/xlsx/{filename}.xlsx'
 
             #! upload s3    
-            if self.uploads3:
+            if self.uploads3 == True :
                 try:
                     await upload_to_s3(local_path_json, f'ai-pipeline-raw-data/data/data_statistics/bps/data_ekspor_impor_nasional/{path_name}/json/{filename}.json')
                     await upload_to_s3(local_path_xlsx, f'ai-pipeline-raw-data/data/data_statistics/bps/data_ekspor_impor_nasional/{path_name}/xlsx/{filename}.xlsx')

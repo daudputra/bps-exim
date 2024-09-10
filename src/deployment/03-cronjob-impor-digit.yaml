@@ -22,7 +22,7 @@ spec:
             crawler: bps
           containers:
           - name: bps-exim-imdigit
-            image: 192.168.202.50/crawler/smart-crawler/bps_exim:0.1.0
+            image: 192.168.202.50/crawler/smart-crawler/bps_exim:0.1.5
             imagePullPolicy: IfNotPresent
-            command: ["python", "main.py", "--headless", "--data", "impor", "--agr", "kodehs", "--jenishs", "digit", "--indexhs", "13"]
+            command: ["python", "main.py", "--headless", "--data", "impor", "--agr", "kodehs", "--jenishs", "digit", "--indexhs", "18"]
           restartPolicy: Never

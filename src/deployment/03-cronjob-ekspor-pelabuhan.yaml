@@ -22,7 +22,7 @@ spec:
             crawler: bps
           containers:
           - name: bps-exim-expelabuhan
-            image: 192.168.202.50/crawler/smart-crawler/bps_exim:0.1.0
+            image: 192.168.202.50/crawler/smart-crawler/bps_exim:0.1.5
             imagePullPolicy: IfNotPresent
             command: ["python", "main.py", "--headless", "--data", "ekspor", "--agr", "pelabuhan"]
           restartPolicy: Never
