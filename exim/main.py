@@ -1,11 +1,13 @@
 from src.controller.main_controller import Controller
+from src.controller.main import Controller
 
 import asyncio
 import argparse
 
 async def main(**kwargs):
     con = Controller('https://bps.go.id/id/exim', 's3://ai-pipeline-raw-data/data/data_statistics/bps/data_ekspor_impor_nasional', **kwargs)
-    await con.main_controller()
+    # await con.main_controller()
+    await con.mainc()
 
 if __name__ == '__main__':
     
