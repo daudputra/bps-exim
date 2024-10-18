@@ -1,0 +1,40 @@
+{
+    "link": "https://bps.go.id/id/exim",
+    "tags": [
+        "Data Ekspor Impor"
+    ],
+    "source": "bps",
+    "title": "Data Ekspor Impor Nasional",
+    "sub_title": "",
+    "range_data": "2024",
+    "create_date": "",
+    "update_date": "",
+    "desc": "Periode data Ekspor Impor terbaru adalah Juni 2024",
+    "category": "Data Ekspor Impor",
+    "sub_category": "",
+    "path_data_raw": [
+        "s3://ai-pipeline-raw-data/data/data_statistics/bps/data_ekspor_impor_nasional/ekspor/menurut_kode_hs/hs_2_digit/2024/[01]_live_animals/atambua_(u)/east_timor/json/april.json",
+        "s3://ai-pipeline-raw-data/data/data_statistics/bps/data_ekspor_impor_nasional/ekspor/menurut_kode_hs/hs_2_digit/2024/[01]_live_animals/atambua_(u)/east_timor/xlsx/April_(kg).xlsx",
+        "s3://ai-pipeline-raw-data/data/data_statistics/bps/data_ekspor_impor_nasional/ekspor/menurut_kode_hs/hs_2_digit/2024/[01]_live_animals/atambua_(u)/east_timor/xlsx/April_(us$).xlsx"
+    ],
+    "crawling_time": "2024-08-20 13:42:53",
+    "crawling_time_epoch": 1724136173,
+    "table_name": "",
+    "country_name": "Indonesia",
+    "level": "Nasional",
+    "stage": "Crawling data",
+    "data": {
+        "tipe_data": "ekspor",
+        "agregasi": "Menurut Kode HS",
+        "jenis_hs": "HS 2 Digit",
+        "tahun": "2024",
+        "kode_hs": "[01] Live animals",
+        "pelabuhan": "ATAMBUA (U)",
+        "negara": "EAST TIMOR",
+        "bulan": "April",
+        "filename_xlsx": [
+            "april_(us$).xlsx",
+            "april_(kg).xlsx"
+        ]
+    }
+}
