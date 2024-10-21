@@ -21,6 +21,34 @@ class BpsExim:
         self.agregasi = kwargs.get("agregasi")
 
 
+    async def scrape_year(self, context):
+        """ Get year to do multiple tasks """
+        try:
+            page = await context.new_page()
+            await page.goto(self.url)
+
+            await Process.input_exim(self.exim, page)
+            await Process.input_agregasi(self.agregasi, page)
+
+            await page.locator("div").filter(has_text=re.compile(r"^Pilih Tahun$")).nth(1).click()
+
+            html_content = await page.content() 
+            soup = BeautifulSoup(html_content, 'html.parser')
+            listbox = soup.find('div', class_='css-qr46ko')
+            list_year = [option.get_text(strip=True) for option in listbox.find_all('div')]
+            
+            print(f"Got Year : ", list_year)
+            await asyncio.sleep(2)
+
+            return list_year
+
+        except Exception as e:
+            raise e
+        except TimeoutError:
+            raise CantLoadWebPage
+        finally:
+            await page.close()
+
 
 
     async def run_process(self):
@@ -31,7 +59,7 @@ class BpsExim:
                 context = await browser.new_context()
 
                 # list_year = await self.scrape_year(context)   
-                list_year = ['2024', '2023', '2022', '2021', '2020', '2019', '2018', '2017', '2016', '2015', '2014']
+                list_year = ['2024']
 
                 # ! Do multiple tasks
                 tasks = [self.process_categrory(context, year) for year in list_year]
@@ -65,49 +93,21 @@ class BpsExim:
 
             if self.agregasi == "negara":
                 await Process.negara_process(page)
-
-            await asyncio.sleep(10)
-
-
+            elif self.agregasi == "pelabuhan":
+                await Process.pelabuhan_process(page)
+            elif "hs" in self.agregasi:
+                await Process.kode_hs_process(page, self.agregasi)
+            else:   
+                print(f"Invalid agregasi value: {self.agregasi}")
+                return
+            
+            await asyncio.sleep(5)
 
         except Exception as e:
             print(f"An error occurred: {str(e)}")
 
         finally:
             await page.close()
-
-
-
-
-
-    async def scrape_year(self, context):
-        """ Get year to do multiple tasks """
-        try:
-            page = await context.new_page()
-            await page.goto(self.url)
-
-            await Process.input_exim(self.exim, page)
-            await Process.input_agregasi(self.agregasi, page)
-
-            await page.locator("div").filter(has_text=re.compile(r"^Pilih Tahun$")).nth(1).click()
-
-            html_content = await page.content() 
-            soup = BeautifulSoup(html_content, 'html.parser')
-            listbox = soup.find('div', class_='css-qr46ko')
-            list_year = [option.get_text(strip=True) for option in listbox.find_all('div')]
-            
-            print(f"Got Year : ", list_year)
-            await asyncio.sleep(2)
-
-            return list_year
-
-        except Exception as e:
-            raise e
-        except TimeoutError:
-            raise CantLoadWebPage
-        finally:
-            await page.close()
-
 
 
 

@@ -12,7 +12,7 @@ if __name__ == "__main__":
 
     parser.add_argument("-l", "--headless", help="Headless mode", action="store_true", default=False)
     parser.add_argument("-ei", "--exim", help="Choose export[e] or import[i]", required=True, choices=["e", "ekspor", "export", "i", "impor" ,"import"], type=str)
-    parser.add_argument("-a", "--agregasi", help="Choose Agregasi", required=True, choices=["kode_hs_full", "kode_hs_digit", "negara", "pelabuhan"], type=str)
+    parser.add_argument("-a", "--agregasi", help="Choose Agregasi", required=True, choices=["hs_full", "hs_digit", "negara", "pelabuhan"], type=str)
 
     args = parser.parse_args()  
     kwargs = vars(args)
