@@ -195,26 +195,34 @@ class Process:
             elif "full" in kode_hs:
                 """process category kode full"""
                 try:
-                    pass
-                # ! inprogress
-                    # index = 0
-                    # while True:
-                    #     await page.locator("div").filter(has_text=re.compile(r"^Ketikkan Kode HS$")).nth(1).click()
-                    #     full_locator = page.locator(f"#react-select-10-option-{index}")
+                    index = 0
+                    while True:
 
-                    #     await full_locator.click()
-                    #     print(await full_locator.inner_text())
+                        await page.locator("div").filter(has_text=re.compile(r"^Ketikkan Kode HS$")).nth(1).click()
+                        full_locator = page.locator(f"#react-select-10-option-{index}")
 
-                    #     # await asyncio.sleep(20)
-                        
-                    #     # await page.locator('#ss > div.mt-4.rounded-lg.bg-white.w-full.flex-col.justify-start.items-start.gap-4.inline-flex.p-4 > div:nth-child(4) > div.w-full.mt-2 > div > div > div.css-1wy0on6 > div:nth-child(1)').click() #? X
-                    #     await page.locator('//*[@id="ss"]/div[2]/div[4]/div[2]/div/div/div[2]/div[1]').click() #? X
+                        if index != 0 and index % 10 == 0:
+                            try:
+                                click_option_scroll = page.locator(f"#react-select-10-option-{index-1}")
+                                await click_option_scroll.scroll_into_view_if_needed(timeout=60000)
+                                await click_option_scroll.wait_for(state='visible', timeout=60000)
+                            except TimeoutError as t:
+                                print(f"Error loading options: {t}")
+                                raise FailedInputCategory("Failed to scroll and load options")
 
-                    #     index += 1
+                            
+
+                        print(await full_locator.inner_text())
+                        await full_locator.click()
+
+                        await page.locator('//*[@id="ss"]/div[2]/div[4]/div[2]/div/div/div[2]/div[1]').click() #? X
+                        await page.locator("div").filter(has_text=re.compile(r"^Ketikkan Kode HS$")).nth(1).click()
+
+                        index += 1
 
 
                 except Exception as e:
-                    print(f"Error kode_hs: {e}")
+                    print(f"Error kode_hs_full: {e}")
                     raise FailedInputCategory("Failed to select kode_hs_full")
 
 
