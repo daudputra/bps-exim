@@ -28,8 +28,8 @@ class BpsExim:
             page = await context.new_page()
             await page.goto(self.url)
 
-            await Process.input_exim(self.exim, page)
-            await Process.input_agregasi(self.agregasi, page)
+            await Process().input_exim(self.exim, page)
+            await Process().input_agregasi(self.agregasi, page)
 
             await page.locator("div").filter(has_text=re.compile(r"^Pilih Tahun$")).nth(1).click()
 
@@ -53,7 +53,7 @@ class BpsExim:
 
 
     async def run_process(self):
-        """ run playwright process """
+        """ run playwright Process() """
         try:
             async with async_playwright() as p:
                 browser = await p.chromium.launch(headless=self.headless, args=[
@@ -73,13 +73,10 @@ class BpsExim:
                 await context.route("**/*", lambda route: route.abort() if route.request.resource_type in ["image", "media", "stylesheet"] else route.continue_())
 
 
-                list_years = await self.scrape_year(context)   
-                # list_year = ['2024']
+                # list_years = await self.scrape_year(context)   
+                list_years = ['2024']
 
                 # ! Do multiple tasks
-                # tasks = [self.process_category(context, year) for year in list_years]
-                # await asyncio.gather(*tasks)
-
                 batch_size = len(list_years)
                 for i in range(0, len(list_years), batch_size):
                     tasks = [self.process_category(context, year) for year in list_years[i:i + batch_size]]
@@ -95,7 +92,7 @@ class BpsExim:
 
 
     async def process_category(self, context, year):
-        """ Start process by aggregasi """
+        """ Start Process() by aggregasi """
         page = None 
         max_attempts = self.max_attempts
         attempt = 0 
@@ -105,25 +102,25 @@ class BpsExim:
                 page = await context.new_page()  
                 await page.goto(self.url)
 
-                await Process.input_exim(self.exim, page)
-                await Process.input_agregasi(self.agregasi, page)
+                await Process().input_exim(self.exim, page)
+                await Process().input_agregasi(self.agregasi, page)
 
                 await page.locator("div").filter(has_text=re.compile(r"^Pilih Tahun$")).nth(1).click()
                 await page.get_by_role("option", name=year).click()
                 await page.locator("body").press("Escape")
 
                 if self.agregasi == "negara":
-                    await Process.negara_process(page)
+                    await Process().negara_process(page)
                 elif self.agregasi == "pelabuhan":
-                    await Process.pelabuhan_process(page)
+                    await Process().pelabuhan_process(page)
                 elif "hs" in self.agregasi:
-                    await Process.kode_hs_process(page, self.agregasi)
+                    await Process().kode_hs_process(page, self.agregasi)
                 else:
                     print(f"Invalid agregasi value: {self.agregasi}")
                     return
 
                 await asyncio.sleep(5)
-                print(f"Process Tab {year} Completed Successfully!")
+                print(f"Process() Tab {year} Completed Successfully!")
                 break 
 
             except Exception as e:
@@ -136,53 +133,3 @@ class BpsExim:
         
         if attempt == max_attempts:
             raise CantLoadWebPage(f"Failed to load the page after {max_attempts} attempts.")
-
-    async def json_process(self):
-        pass
-
-
-
-
-
-
-
-
-
-
-
-
-    # async def process_category(self, context, year):
-    #     """ start process by agregasi """
-    #     try:
-    #         page = await context.new_page()
-    #         await page.goto(self.url)
-
-    #         await Process.input_exim(self.exim, page)
-    #         await Process.input_agregasi(self.agregasi, page)
-
-    #         await page.locator("div").filter(has_text=re.compile(r"^Pilih Tahun$")).nth(1).click()
-    #         await page.get_by_role("option", name=year).click()
-    #         await page.locator("body").press("Escape")
-
-    #         # await page.screenshot(path=f'output/screenshot/{year}.png', full_page=True)
-
-    #         if self.agregasi == "negara":
-    #             await Process.negara_process(page)
-    #         elif self.agregasi == "pelabuhan":
-    #             await Process.pelabuhan_process(page)
-    #         elif "hs" in self.agregasi:
-    #             await Process.kode_hs_process(page, self.agregasi)
-    #         else:   
-    #             print(f"Invalid agregasi value: {self.agregasi}")
-    #             return
-            
-    #         await asyncio.sleep(5)
-
-
-    #         print(f"Process Tab {year} Completed Successfully!")
-
-    #     except Exception as e:
-    #         print(f"An error occurred: {str(e)}")
-
-    #     finally:
-    #         await page.close()
