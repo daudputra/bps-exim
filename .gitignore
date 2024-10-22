@@ -2,5 +2,14 @@ exim2
 exims_tidak_jadi
 a.ipynb
 awaw
+example_result.json
 
+.git
+.gitignore
+.pytest_cache/
+__pycache__/
 
+*.venv
+*.venv.*
+venv.*
+venv 
