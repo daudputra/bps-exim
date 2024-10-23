@@ -19,6 +19,59 @@ class Process:
                 await close_button.click()
 
 
+
+
+
+
+    async def __negara_pick(self, page, negara):
+        await page.locator("div").filter(has_text=re.compile(r"^Pilih Negara$")).nth(1).click()
+        negara_locators = page.get_by_role("option", name=negara, exact=True)
+
+        count = await negara_locators.count()
+
+        # ! jika ada nama yang sama dia akan di click semua tetapi setelah itu dia akan melakukan click lagi dengan nama yang sama
+        if count > 1:
+            options = await page.query_selector_all(f"role=option[name={negara}]")
+            for option in options:
+                await option.click()
+                print(await option.inner_text())
+        else:
+            print(await negara_locators.inner_text())
+            await negara_locators.click()
+
+        await page.locator("body").press("Escape")
+
+
+
+
+    async def __pelabuhan_pick(self, page, pelabuhan):
+        await page.locator("div").filter(has_text=re.compile(r"^Pilih Pelabuhan$")).nth(1).click()
+        pelabuhan_locators = page.get_by_role("option", name=pelabuhan, exact=True)
+
+        count = await pelabuhan_locators.count()
+
+        # ! jika ada nama yang sama dia akan di click semua tetapi setelah itu dia akan melakukan click lagi dengan nama yang sama
+        if count > 1:
+            options = await page.query_selector_all(f"role=option[name='{pelabuhan}']")
+            for option in options:
+                await option.click()
+                print(await option.inner_text())
+        else:
+            print(await pelabuhan_locators.inner_text())
+            await pelabuhan_locators.click()
+
+        await page.locator("body").press("Escape")
+        await asyncio.sleep(1)
+
+
+
+
+
+
+
+
+
+
     async def input_exim(self, exim:str, page):
         """ click exim radio button """
         try:
@@ -30,6 +83,10 @@ class Process:
         except Exception as e:
             print(f"Error input exim: {e}")
             raise FailedInputCategory("Invalid input exim")
+
+
+
+
 
 
 
@@ -64,6 +121,8 @@ class Process:
 
 
 
+
+
     async def negara_process(self, page):
         """Prpcess category negara"""
         try:
@@ -79,30 +138,21 @@ class Process:
                 return list_negara
             
             list_negara = await get_negara_text(page)
-            
+        
+
 
             for negara in list_negara:
-                await page.locator("div").filter(has_text=re.compile(r"^Pilih Negara$")).nth(1).click()
-                negara_locators = page.get_by_role("option", name=negara, exact=True)
-
-                count = await negara_locators.count()
-
-                # ! jika ada nama yang sama dia akan di click semua tetapi setelah itu dia akan melakukan click lagi dengan nama yang sama
-                if count > 1:
-                    options = await page.query_selector_all(f"role=option[name={negara}]")
-                    for option in options:
-                        await option.click();
-                        print(await option.inner_text())
-                else:
-                    print(await negara_locators.inner_text())
-                    await negara_locators.click()
-
-                await page.locator("body").press("Escape")
+                await self.__negara_pick(page, negara)
 
                 # ! lanjut proses disini
                 # ....
 
-                await self.check_table(page)
+                list_bulan = await self.check_table(page, "negara")
+                # ? bulan option process and download file
+                if list_bulan is not None:
+                    for bulan_option in list_bulan:
+                        await self.bulan_process(page, bulan_option)
+
 
                 await page.locator('#ss > div.mt-4.rounded-lg.bg-white.w-full.flex-col.justify-start.items-start.gap-4.inline-flex.p-4 > div:nth-child(6) > div > div > div > div.css-1wy0on6 > div:nth-child(1)').click()# ? X
 
@@ -110,6 +160,10 @@ class Process:
         except Exception as e:
             print(f"Error negara: {e}")
             raise FailedInputCategory("Failed to select negara")
+
+
+
+
 
 
 
@@ -131,34 +185,26 @@ class Process:
             
 
             for pelabuhan in list_pelabuhan:
-                await page.locator("div").filter(has_text=re.compile(r"^Pilih Pelabuhan$")).nth(1).click()
-                pelabuhan_locators = page.get_by_role("option", name=pelabuhan, exact=True)
-
-                count = await pelabuhan_locators.count()
-
-                # ! jika ada nama yang sama dia akan di click semua tetapi setelah itu dia akan melakukan click lagi dengan nama yang sama
-                if count > 1:
-                    options = await page.query_selector_all(f"role=option[name='{pelabuhan}']")
-                    for option in options:
-                        await option.click();
-                        print(await option.inner_text())
-                else:
-                    print(await pelabuhan_locators.inner_text())
-                    await pelabuhan_locators.click()
-
-                await page.locator("body").press("Escape")
-                await asyncio.sleep(1)
+                await self.__pelabuhan_pick(page, pelabuhan)
 
                 # ! lanjut proses disini
                 # ....
 
-                await self.check_table(page)
+                list_bulan = await self.check_table(page, "pelabuhan")
+                # ? bulan option process and download file
+                if list_bulan is not None:
+                    for bulan_option in list_bulan:
+                        await self.bulan_process(page, bulan_option)
 
                 await page.locator('#ss > div.mt-4.rounded-lg.bg-white.w-full.flex-col.justify-start.items-start.gap-4.inline-flex.p-4 > div:nth-child(5) > div > div > div > div.css-1wy0on6 > div:nth-child(1)').click() #? X
 
         except Exception as e:
             print(f"Error pelabuhan: {e}")
             raise FailedInputCategory("Failed to select pelabuhan")
+
+
+
+
 
 
 
@@ -197,7 +243,24 @@ class Process:
                     # ! lanjut proses disini
                     # ....
 
-                    await self.check_table(page)
+                    _, pelabuhan_list, _ = await self.check_table(page, "hs_digit")
+
+                    for pelabuhan_option in pelabuhan_list:
+                        await self.__pelabuhan_pick(page, pelabuhan_option)
+
+                        negara_list, _, _ = await self.check_table(page, "hs_digit")
+
+                        for negara_option in negara_list:
+                            await self.__negara_pick(page, negara_option)
+
+                            _, _, bulan_list = await self.check_table(page, "hs_digit")
+                            for bulan_option in bulan_list:
+                                await self.bulan_process(page, bulan_option)
+
+                            await page.locator('#ss > div.mt-4.rounded-lg.bg-white.w-full.flex-col.justify-start.items-start.gap-4.inline-flex.p-4 > div:nth-child(6) > div > div > div > div.css-1wy0on6 > div:nth-child(1)').click()# ? X negara
+                        await page.locator('#ss > div.mt-4.rounded-lg.bg-white.w-full.flex-col.justify-start.items-start.gap-4.inline-flex.p-4 > div:nth-child(5) > div > div > div > div.css-1wy0on6 > div:nth-child(1)').click() #? X pelabuhan
+
+
 
                     await page.locator('#ss > div.mt-4.rounded-lg.bg-white.w-full.flex-col.justify-start.items-start.gap-4.inline-flex.p-4 > div:nth-child(4) > div.w-full.mt-2 > div > div > div.css-1wy0on6 > div:nth-child(1)').click() #? X
 
@@ -230,7 +293,7 @@ class Process:
                         # ! lanjut proses disini
                         # ....
 
-                        await self.check_table(page)
+                        
 
                         await page.locator('//*[@id="ss"]/div[2]/div[4]/div[2]/div/div/div[2]/div[1]').click() #? X
 
@@ -253,11 +316,10 @@ class Process:
 
 
 
-    async def check_table(self, page):
+    async def check_table(self, page, agregasi):
         """Get list of option negara, pelabuhan, and bulan who has table data"""
-        # page.locator("button").filter(has_text=re.compile(r"^Buat Tabel$"))
         await page.get_by_role("button", name="Buat Tabel").click()
-        await asyncio.sleep(3)
+        await asyncio.sleep(2)
         
         try:
             html_content = await page.content()
@@ -267,21 +329,76 @@ class Process:
             table_data = soup.find('table', class_='pvtTable')
 
             if table_data:
-                list_negara_text = list(set(pelabuhan.get_text(strip=True) for pelabuhan in table_data.select('thead:nth-child(1) > tr:nth-child(1) > th.pvtColLabel')))
-                print(list_negara_text)
+                await page.wait_for_selector("#ss > div:nth-child(3) > div > div.overflow-x-scroll > table")
+                
+                if "hs" in agregasi:
+                    list_negara = list(set(negara.get_text(strip=True) for negara in table_data.select('thead:nth-child(1) > tr:nth-child(1) > th.pvtColLabel')))
+                    print(list_negara)
 
-                list_pelabuhan_text = list(set(pelabuhan.get_text(strip=True) for pelabuhan in table_data.select('thead:nth-child(1) > tr:nth-child(2) > th.pvtColLabel')))
-                print(list_pelabuhan_text)
+                    list_pelabuhan = list(set(pelabuhan.get_text(strip=True) for pelabuhan in table_data.select('thead:nth-child(1) > tr:nth-child(2) > th.pvtColLabel')))
+                    print(list_pelabuhan)
 
-                list_bulan_text = list(set(bulan.get_text(strip=True) for bulan in table_data.select('thead:nth-child(1) > tr:nth-child(3) > th.pvtColLabel')))
-                print(list_bulan_text)
+                    list_bulan = list(set(bulan.get_text(strip=True) for bulan in table_data.select('thead:nth-child(1) > tr:nth-child(3) > th.pvtColLabel')))
+                    print(list_bulan)
 
+                    return list_negara, list_pelabuhan, list_bulan
+                
+                elif "negara" or "pelabuhan" in agregasi:
+                    list_bulan = list(set(bulan.get_text(strip=True) for bulan in table_data.select('thead:nth-child(1) > tr:nth-child(2) > th.pvtColLabel')))
+                    print(list_bulan)
 
-                return list_negara_text, list_pelabuhan_text, list_bulan_text
+                    return list_bulan
+                else:
+                    print(f"option {agregasi} salah")
             else:
                 print("Tabel dengan class 'pvtTable' tidak ditemukan.")
-                return None, None, None
+                if "hs" in agregasi:
+                    return None, None, None
+                else:
+                    return None 
             
 
         except Exception as e:
             raise e
+        
+
+
+
+
+
+
+
+
+    async def bulan_process(self, page, bulan):
+        """process category bulan"""
+        list_bulan_transforms = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"]
+        
+        for bulan_transform in list_bulan_transforms:
+            if bulan_transform in bulan:
+                bulan_option = bulan_transform
+
+        print(bulan_option)
+
+        try:
+            await page.locator("div").filter(has_text=re.compile(r"^Pilih Bulan$")).nth(1).click()
+            bulan_locator = page.get_by_role("option", name=bulan_option, exact=True)
+            await bulan_locator.click()
+
+            await page.locator("body").press("Escape")
+            await page.get_by_role("button", name="Buat Tabel").click()
+
+            await page.locator('#ss > div.mt-4.rounded-lg.bg-white.w-full.flex-col.justify-start.items-start.gap-4.inline-flex.p-4 > div:nth-child(7) > div > div > div > div.css-1wy0on6 > div:nth-child(1)').click() #? X
+
+        except Exception as e:
+            print(f"Error download_file: {e}")
+            raise FailedInputCategory("Failed to select bulan")
+
+
+
+
+
+
+
+
+    async def download_files(self, page):
+        pass

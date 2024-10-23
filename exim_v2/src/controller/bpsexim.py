@@ -16,10 +16,11 @@ class BpsExim:
         self.domain = "bps.go.id"
 
         # ? arguments
-        self.headless = headless
-        self.exim = kwargs.get("exim")
-        self.agregasi = kwargs.get("agregasi")
-        self.max_attempts = kwargs.get("max_attempts", 3)
+        self.headless = headless #? headless mode
+        self.exim = kwargs.get("exim") #? pilih data option 
+        self.agregasi = kwargs.get("agregasi") #? agregasi option
+        self.max_attempts = kwargs.get("max_attempts", 3) #? max attempts
+        self.batch = kwargs.get("batch", None) #? batch size
 
 
     async def scrape_year(self, context):
@@ -70,14 +71,17 @@ class BpsExim:
 
 
                 # ? ignore image and media to compress memory and cpu usage
-                await context.route("**/*", lambda route: route.abort() if route.request.resource_type in ["image", "media", "stylesheet"] else route.continue_())
+                # await context.route("**/*", lambda route: route.abort() if route.request.resource_type in ["image", "media", "stylesheet"] else route.continue_())    
+                await context.route("**/*", lambda route: route.abort() if route.request.resource_type in ["image", "media", "stylesheet", "svg", "gif"] else route.continue_())
 
 
-                # list_years = await self.scrape_year(context)   
-                list_years = ['2024']
+
+                # list_years = await self.scrape_year(context)
+                list_years = ['2024', '2023']
+
 
                 # ! Do multiple tasks
-                batch_size = len(list_years)
+                batch_size =  self.batch if self.batch != None else len(list_years)
                 for i in range(0, len(list_years), batch_size):
                     tasks = [self.process_category(context, year) for year in list_years[i:i + batch_size]]
                     await asyncio.gather(*tasks)  
