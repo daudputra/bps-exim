@@ -1,3 +1,6 @@
+# body > div > div > h2 
+
+
 import re
 import asyncio
 import os
@@ -254,62 +257,71 @@ class Process:
                     await page.locator("body").press("Escape")
                     return list_digits
 
-                list_digits = await get_digit_count(page)
-                for digit in list_digits:
+                try:
+                    list_digits = await get_digit_count(page)
+                    for digit in list_digits:
 
-                    await page.locator("div").filter(has_text=re.compile(r"^Ketikkan Kode HS$")).nth(1).click()
-                    digit_locators = page.get_by_role("option", name=digit, exact=True)
+                        await page.locator("div").filter(has_text=re.compile(r"^Ketikkan Kode HS$")).nth(1).click()
+                        digit_locators = page.get_by_role("option", name=digit, exact=True)
 
-                    await page.wait_for_function("document.querySelector('.css-qr46ko').innerText !== 'Loading...'")
+                        await page.wait_for_function("document.querySelector('.css-qr46ko').innerText !== 'Loading...'")
 
-                    print(await digit_locators.inner_text())
-                    self.hs_digit_text = await digit_locators.inner_text()
-                    await digit_locators.click()
-                    await page.locator("body").press("Escape")
-                    await asyncio.sleep(1)
-
-
-                    _, pelabuhan_list, _ = await self.check_table(page, "hs_digit")
-
-                    for pelabuhan_option in pelabuhan_list:
-                        print(f"PELABUHAN = {pelabuhan_option}")
-                        await self.__pelabuhan_pick(page, pelabuhan_option)
+                        print(await digit_locators.inner_text())
+                        self.hs_digit_text = await digit_locators.inner_text()
+                        await digit_locators.click()
+                        await page.locator("body").press("Escape")
+                        await asyncio.sleep(1)
 
 
-                        negara_list, _, _ = await self.check_table(page, "hs_digit")
-
-                        for negara_option in negara_list:
-                            print(f"NEGARA = {negara_option}")
-                            await self.__negara_pick(page, negara_option)
-
-                            # ! lanjut proses disini
-                            # ! ERROR DISNI
-                            # ....
-                            _, _, bulan_list = await self.check_table(page, "hs_digit")
-                            for bulan_option in bulan_list:
-                                print(f"BULAN = {bulan_option}")
-                                await self.bulan_process(page, bulan_option)
-
-                                self.bulan_text = bulan_option.split()[1]
-                                print(self.bulan_text)
-                                await self.download_files(page, f"data/menurut_kode_hs/hs_2_digit/{year}/{self.hs_digit_text.lower().replace(" ", "_")}/{pelabuhan_option.lower().replace(" ", "_")}/{negara_option.lower().replace(" ", "_")}/xlsx/", self.bulan_text)
-
-                                await page.locator('#ss > div.mt-4.rounded-lg.bg-white.w-full.flex-col.justify-start.items-start.gap-4.inline-flex.p-4 > div:nth-child(7) > div > div > div > div.css-1wy0on6 > div:nth-child(1)').click() #? bulan X
-                            await page.locator('#ss > div.mt-4.rounded-lg.bg-white.w-full.flex-col.justify-start.items-start.gap-4.inline-flex.p-4 > div:nth-child(6) > div > div > div > div.css-1wy0on6 > div:nth-child(1)').click()# ? X negara
-                        await page.locator('#ss > div.mt-4.rounded-lg.bg-white.w-full.flex-col.justify-start.items-start.gap-4.inline-flex.p-4 > div:nth-child(5) > div > div > div > div.css-1wy0on6 > div:nth-child(1)').click() #? X pelabuhan
+                        _, pelabuhan_list, _ = await self.check_table(page, "hs_digit")
+                        for pelabuhan_option in pelabuhan_list:
+                            print(f"PELABUHAN = {pelabuhan_option}")
+                            await self.__pelabuhan_pick(page, pelabuhan_option)
 
 
+                            negara_list, _, _ = await self.check_table(page, "hs_digit")
 
-                    await page.locator('#ss > div.mt-4.rounded-lg.bg-white.w-full.flex-col.justify-start.items-start.gap-4.inline-flex.p-4 > div:nth-child(4) > div.w-full.mt-2 > div > div > div.css-1wy0on6 > div:nth-child(1)').click() #? X
+                            for negara_option in negara_list:
+                                print(f"NEGARA = {negara_option}")
+                                await self.__negara_pick(page, negara_option)
+
+                                # ! lanjut proses disini
+                                # ! ERROR DISNI
+                                # ....
+                                _, _, bulan_list = await self.check_table(page, "hs_digit")
+                                for bulan_option in bulan_list:
+                                    print(f"BULAN = {bulan_option}")
+                                    await self.bulan_process(page, bulan_option)
+
+                                    self.bulan_text = bulan_option.split()[1]
+                                    print(self.bulan_text)
+                                    await self.download_files(page, f"data/menurut_kode_hs/hs_2_digit/{year}/{self.hs_digit_text.lower().replace(" ", "_")}/{pelabuhan_option.lower().replace(" ", "_")}/{negara_option.lower().replace(" ", "_")}/xlsx/", self.bulan_text)
+
+                                    await page.locator('#ss > div.mt-4.rounded-lg.bg-white.w-full.flex-col.justify-start.items-start.gap-4.inline-flex.p-4 > div:nth-child(7) > div > div > div > div.css-1wy0on6 > div:nth-child(1)').click() #? bulan X
+                                await page.locator('#ss > div.mt-4.rounded-lg.bg-white.w-full.flex-col.justify-start.items-start.gap-4.inline-flex.p-4 > div:nth-child(6) > div > div > div > div.css-1wy0on6 > div:nth-child(1)').click()# ? X negara
+                            await page.locator('#ss > div.mt-4.rounded-lg.bg-white.w-full.flex-col.justify-start.items-start.gap-4.inline-flex.p-4 > div:nth-child(5) > div > div > div > div.css-1wy0on6 > div:nth-child(1)').click() #? X pelabuhan
+
+
+
+                        await page.locator('#ss > div.mt-4.rounded-lg.bg-white.w-full.flex-col.justify-start.items-start.gap-4.inline-flex.p-4 > div:nth-child(4) > div.w-full.mt-2 > div > div > div.css-1wy0on6 > div:nth-child(1)').click() #? X
+                except Exception as e:
+                    print(f"Error digit: {e}")
+                    raise FailedInputCategory("Failed to select digit")
+
+
+
 
             elif "full" in kode_hs:
                 """process category kode full"""
                 try:
+                    pass
                     index = 0
                     while True:
 
                         await page.locator("div").filter(has_text=re.compile(r"^Ketikkan Kode HS$")).nth(1).click()
-                        full_locator = page.locator(f"#react-select-10-option-{index}")
+                        await asyncio.sleep(2)
+                        # full_locator = page.locator(f"#react-select-10-option-{index}")
+                        full_locator = page.locator(f"//html/body/div[2]/div[2]/div[2]/div[1]/div/div[2]/div[4]/div[2]/div/div[2]/div/div[{index+1}]")
 
                         if index != 0 and index % 10 == 0:
                             try:
@@ -320,7 +332,7 @@ class Process:
                                 print(f"Error loading options: {t}")
                                 raise FailedInputCategory("Failed to scroll and load options")
 
-                            
+                        await page.wait_for_function("document.querySelector('.css-qr46ko').innerText !== 'Loading...'")
 
                         print(await full_locator.inner_text())
                         self.hs_full_text = await full_locator.inner_text()
@@ -333,32 +345,33 @@ class Process:
                         # ....
 
                         _, pelabuhan_list, _ = await self.check_table(page, "hs_full")
+                        if pelabuhan_list is not None:
+                            for pelabuhan_option in pelabuhan_list:
+                                print(f"PELABUHAN = {pelabuhan_option}")
+                                await self.__pelabuhan_pick(page, pelabuhan_option)
 
-                        for pelabuhan_option in pelabuhan_list:
-                            print(f"PELABUHAN = {pelabuhan_option}")
-                            await self.__pelabuhan_pick(page, pelabuhan_option)
+                                negara_list, _, _ = await self.check_table(page, "hs_digit")
+                                if negara_list is not None:
+                                    for negara_option in negara_list:
+                                        print(f"NEGARA = {negara_option}")
+                                        await self.__negara_pick(page, negara_option)
 
-                            negara_list, _, _ = await self.check_table(page, "hs_full")
+                                        # ! lanjut proses disini
+                                        # ! ERROR DISNI
+                                        # ....
+                                        _, _, bulan_list = await self.check_table(page, "hs_digit")
+                                        for bulan_option in bulan_list:
+                                            print(f"BULAN = {bulan_option}")
+                                            await self.bulan_process(page, bulan_option)
 
-                            for negara_option in negara_list:
-                                print(f"NEGARA = {negara_option}")
-                                await self.__negara_pick(page, negara_option)
+                                            self.bulan_text = bulan_option.split()[1]
+                                            print(self.bulan_text)
+                                            await self.download_files(page, f"data/menurut_kode_hs/hs_full/{year}/{self.hs_full_text.split("[")[1].split("]")[0].lower().replace(" ", "_")}/{pelabuhan_option.lower().replace(" ", "_")}/{negara_option.lower().replace(" ", "_")}/xlsx/", self.bulan_text)
 
-                                # ! lanjut proses disini
-                                # ! ERROR DISNI
-                                # ....
-                                _, _, bulan_list = await self.check_table(page, "hs_full")
-                                for bulan_option in bulan_list:
-                                    print(f"BULAN = {bulan_option}")
-                                    await self.bulan_process(page, bulan_option)
-
-                                    self.bulan_text = bulan_option.split()[1]
-                                    print(self.bulan_text)
-                                    await self.download_files(page, f"data/menurut_kode_hs/hs_full/{year}/{self.hs_full_text.split("[")[1].split("]")[0].lower().replace(" ", "_")}/{pelabuhan_option.lower().replace(" ", "_")}/{negara_option.lower().replace(" ", "_")}/xlsx/", self.bulan_text)
-
-                                    await page.locator('#ss > div.mt-4.rounded-lg.bg-white.w-full.flex-col.justify-start.items-start.gap-4.inline-flex.p-4 > div:nth-child(7) > div > div > div > div.css-1wy0on6 > div:nth-child(1)').click() #? bulan X
-                                await page.locator('#ss > div.mt-4.rounded-lg.bg-white.w-full.flex-col.justify-start.items-start.gap-4.inline-flex.p-4 > div:nth-child(6) > div > div > div > div.css-1wy0on6 > div:nth-child(1)').click()# ? X negara
-                            await page.locator('#ss > div.mt-4.rounded-lg.bg-white.w-full.flex-col.justify-start.items-start.gap-4.inline-flex.p-4 > div:nth-child(5) > div > div > div > div.css-1wy0on6 > div:nth-child(1)').click() #? X pelabuhan
+                                            await page.locator('#ss > div.mt-4.rounded-lg.bg-white.w-full.flex-col.justify-start.items-start.gap-4.inline-flex.p-4 > div:nth-child(7) > div > div > div > div.css-1wy0on6 > div:nth-child(1)').click() #? bulan X
+                                        await page.locator('#ss > div.mt-4.rounded-lg.bg-white.w-full.flex-col.justify-start.items-start.gap-4.inline-flex.p-4 > div:nth-child(6) > div > div > div > div.css-1wy0on6 > div:nth-child(1)').click()# ? X negara
+                                        
+                                    await page.locator('#ss > div.mt-4.rounded-lg.bg-white.w-full.flex-col.justify-start.items-start.gap-4.inline-flex.p-4 > div:nth-child(5) > div > div > div > div.css-1wy0on6 > div:nth-child(1)').click() #? X pelabuhan
 
                         await page.locator('//*[@id="ss"]/div[2]/div[4]/div[2]/div/div/div[2]/div[1]').click() #? X
 
@@ -399,13 +412,13 @@ class Process:
                 
                 if "hs" in agregasi:
                     list_negara = list(set(negara.get_text(strip=True) for negara in table_data.select('thead:nth-child(1) > tr:nth-child(1) > th.pvtColLabel')))
-                    # print(list_negara)
+                    print(list_negara)
 
                     list_pelabuhan = list(set(pelabuhan.get_text(strip=True) for pelabuhan in table_data.select('thead:nth-child(1) > tr:nth-child(2) > th.pvtColLabel')))
-                    # print(list_pelabuhan)
+                    print(list_pelabuhan)
 
                     list_bulan = list(set(bulan.get_text(strip=True) for bulan in table_data.select('thead:nth-child(1) > tr:nth-child(3) > th.pvtColLabel')))
-                    # print(list_bulan)
+                    print(list_bulan)
 
                     return list_negara, list_pelabuhan, list_bulan
                 
@@ -421,7 +434,7 @@ class Process:
                 if "hs" in agregasi:
                     return None, None, None
                 else:
-                    return None 
+                    return None
             
 
         except Exception as e:
