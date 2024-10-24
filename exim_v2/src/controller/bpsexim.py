@@ -19,7 +19,7 @@ class BpsExim:
         self.headless = headless #? headless mode
         self.exim = kwargs.get("exim") #? pilih data option 
         self.agregasi = kwargs.get("agregasi") #? agregasi option
-        self.max_attempts = kwargs.get("max_attempts", 3) #? max attempts
+        self.max_attempts = kwargs.get("attempt", 3) #? max attempts
         self.batch = kwargs.get("batch", None) #? batch size
 
 
@@ -71,20 +71,20 @@ class BpsExim:
 
 
                 # ? ignore image and media to compress memory and cpu usage
-                # await context.route("**/*", lambda route: route.abort() if route.request.resource_type in ["image", "media", "stylesheet"] else route.continue_())    
-                await context.route("**/*", lambda route: route.abort() if route.request.resource_type in ["image", "media", "stylesheet", "svg", "gif"] else route.continue_())
+                await context.route("**/*", lambda route: route.abort() if route.request.resource_type in ["image", "media", "stylesheet"] else route.continue_())    
+                # await context.route("**/*", lambda route: route.abort() if route.request.resource_type in ["image", "media", "svg", "gif"] else route.continue_())
 
 
 
                 # list_years = await self.scrape_year(context)
-                list_years = ['2024', '2023']
+                list_years = ['2023']
 
 
                 # ! Do multiple tasks
                 batch_size =  self.batch if self.batch != None else len(list_years)
                 for i in range(0, len(list_years), batch_size):
                     tasks = [self.process_category(context, year) for year in list_years[i:i + batch_size]]
-                    await asyncio.gather(*tasks)  
+                    await asyncio.gather(*tasks, return_exceptions=True)  
 
                 
 
@@ -96,7 +96,8 @@ class BpsExim:
 
 
     async def process_category(self, context, year):
-        """ Start Process() by aggregasi """
+        """ Start Process by aggregasi """
+
         page = None 
         max_attempts = self.max_attempts
         attempt = 0 
@@ -106,6 +107,7 @@ class BpsExim:
                 page = await context.new_page()  
                 await page.goto(self.url)
 
+
                 await Process().input_exim(self.exim, page)
                 await Process().input_agregasi(self.agregasi, page)
 
@@ -114,11 +116,11 @@ class BpsExim:
                 await page.locator("body").press("Escape")
 
                 if self.agregasi == "negara":
-                    await Process().negara_process(page)
+                    await Process().negara_process(page, year)
                 elif self.agregasi == "pelabuhan":
-                    await Process().pelabuhan_process(page)
+                    await Process().pelabuhan_process(page, year)
                 elif "hs" in self.agregasi:
-                    await Process().kode_hs_process(page, self.agregasi)
+                    await Process().kode_hs_process(page, self.agregasi, year)
                 else:
                     print(f"Invalid agregasi value: {self.agregasi}")
                     return

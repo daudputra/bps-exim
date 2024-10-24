@@ -5,10 +5,15 @@ awaw
 example_result.json
 codegen.py
 
+data
+
 .git
 .gitignore
 .pytest_cache/
 __pycache__/
+__pycache__
+*.pytest_cache/
+*__pycache__/
 
 *.venv
 *.venv.*

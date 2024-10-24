@@ -886,6 +886,7 @@ class Controller():
             local_path_json = f'data/{path_name}/json/{filename}.json'
             local_path_xlsx = f'data/{path_name}/xlsx/{filename}.xlsx'
 
+
             #! upload s3    
             if self.uploads3 == True :
                 try:

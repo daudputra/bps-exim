@@ -1,1 +1,1 @@
-from .exception_msg import CantLoadWebPage, FailedInputCategory, CantFoundOption
+from .exception_msg import CantLoadWebPage, FailedInputCategory, CantFoundOption, CantDownloadFiles

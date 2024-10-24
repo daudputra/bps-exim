@@ -1,11 +1,18 @@
 import re
 import asyncio
+import os
 
 from bs4 import BeautifulSoup
 
-from ..exception import FailedInputCategory
+from ..exception import FailedInputCategory, CantDownloadFiles
 
 class Process:
+    def __init__(self) -> None:
+        self.negara_text = None
+        self.bulan_text = None
+        self.pelabuhan_text = None
+        self.year_text = None
+        self.exim_text = None
 
     async def close_popup(self, page):
         """tutup popup "jika ada" pada saat masuk ke dalam page"""
@@ -34,9 +41,9 @@ class Process:
             options = await page.query_selector_all(f"role=option[name={negara}]")
             for option in options:
                 await option.click()
-                print(await option.inner_text())
+                # print(await option.inner_text())
         else:
-            print(await negara_locators.inner_text())
+            # print(await negara_locators.inner_text())
             await negara_locators.click()
 
         await page.locator("body").press("Escape")
@@ -55,9 +62,9 @@ class Process:
             options = await page.query_selector_all(f"role=option[name='{pelabuhan}']")
             for option in options:
                 await option.click()
-                print(await option.inner_text())
+                # print(await option.inner_text())
         else:
-            print(await pelabuhan_locators.inner_text())
+            # print(await pelabuhan_locators.inner_text())
             await pelabuhan_locators.click()
 
         await page.locator("body").press("Escape")
@@ -76,8 +83,10 @@ class Process:
         """ click exim radio button """
         try:
             if "i" in exim:
+                self.exim_text = "impor"
                 exim_placeholder = "i"
             elif "e" in exim:
+                self.exim_text = "ekspor"
                 exim_placeholder = "e"
             await page.get_by_placeholder(exim_placeholder).click()
         except Exception as e:
@@ -123,8 +132,11 @@ class Process:
 
 
 
-    async def negara_process(self, page):
+    async def negara_process(self, page, year):
         """Prpcess category negara"""
+
+        self.year_text = year
+
         try:
             async def get_negara_text(page):
                 await page.locator("div").filter(has_text=re.compile(r"^Pilih Negara$")).nth(1).click()
@@ -140,7 +152,6 @@ class Process:
             list_negara = await get_negara_text(page)
         
 
-
             for negara in list_negara:
                 await self.__negara_pick(page, negara)
 
@@ -151,7 +162,13 @@ class Process:
                 # ? bulan option process and download file
                 if list_bulan is not None:
                     for bulan_option in list_bulan:
+                        self.bulan_text = bulan_option.split()[1]
+
+
                         await self.bulan_process(page, bulan_option)
+                        await self.download_files(page, f"data/menurut_negara/{year}/{negara.lower().replace(" ","_")}/xlsx/", self.bulan_text)
+
+                        await page.locator('#ss > div.mt-4.rounded-lg.bg-white.w-full.flex-col.justify-start.items-start.gap-4.inline-flex.p-4 > div:nth-child(7) > div > div > div > div.css-1wy0on6 > div:nth-child(1)').click() #? bulan X
 
 
                 await page.locator('#ss > div.mt-4.rounded-lg.bg-white.w-full.flex-col.justify-start.items-start.gap-4.inline-flex.p-4 > div:nth-child(6) > div > div > div > div.css-1wy0on6 > div:nth-child(1)').click()# ? X
@@ -167,8 +184,11 @@ class Process:
 
 
 
-    async def pelabuhan_process(self, page):
+    async def pelabuhan_process(self, page, year):
         """Process category pelabuhan"""
+
+        self.year_text = year
+
         try:
             async def get_pelabuhan_text(page):
                 await page.locator("div").filter(has_text=re.compile(r"^Pilih Pelabuhan$")).nth(1).click()
@@ -191,10 +211,14 @@ class Process:
                 # ....
 
                 list_bulan = await self.check_table(page, "pelabuhan")
-                # ? bulan option process and download file
+                # ? pelabuhan option process and download file
                 if list_bulan is not None:
                     for bulan_option in list_bulan:
                         await self.bulan_process(page, bulan_option)
+
+                        self.bulan_text = bulan_option.split()[1]
+                        await self.download_files(page, f"data/menurut_pelabuhan/{year}/{pelabuhan.lower().replace(" ", "_")}/xlsx/", self.bulan_text)
+                        await page.locator('#ss > div.mt-4.rounded-lg.bg-white.w-full.flex-col.justify-start.items-start.gap-4.inline-flex.p-4 > div:nth-child(7) > div > div > div > div.css-1wy0on6 > div:nth-child(1)').click() #? bulan X
 
                 await page.locator('#ss > div.mt-4.rounded-lg.bg-white.w-full.flex-col.justify-start.items-start.gap-4.inline-flex.p-4 > div:nth-child(5) > div > div > div > div.css-1wy0on6 > div:nth-child(1)').click() #? X
 
@@ -208,8 +232,11 @@ class Process:
 
 
 
-    async def kode_hs_process(self, page, kode_hs):
+    async def kode_hs_process(self, page, kode_hs, year):
         """process category kode hs"""
+
+        self.year_text = year
+
         try:
             if "digit" in kode_hs:
                 """process category kode hs"""
@@ -236,27 +263,38 @@ class Process:
                     await page.wait_for_function("document.querySelector('.css-qr46ko').innerText !== 'Loading...'")
 
                     print(await digit_locators.inner_text())
+                    self.hs_digit_text = await digit_locators.inner_text()
                     await digit_locators.click()
                     await page.locator("body").press("Escape")
                     await asyncio.sleep(1)
 
-                    # ! lanjut proses disini
-                    # ....
 
                     _, pelabuhan_list, _ = await self.check_table(page, "hs_digit")
 
                     for pelabuhan_option in pelabuhan_list:
+                        print(f"PELABUHAN = {pelabuhan_option}")
                         await self.__pelabuhan_pick(page, pelabuhan_option)
+
 
                         negara_list, _, _ = await self.check_table(page, "hs_digit")
 
                         for negara_option in negara_list:
+                            print(f"NEGARA = {negara_option}")
                             await self.__negara_pick(page, negara_option)
 
+                            # ! lanjut proses disini
+                            # ! ERROR DISNI
+                            # ....
                             _, _, bulan_list = await self.check_table(page, "hs_digit")
                             for bulan_option in bulan_list:
+                                print(f"BULAN = {bulan_option}")
                                 await self.bulan_process(page, bulan_option)
 
+                                self.bulan_text = bulan_option.split()[1]
+                                print(self.bulan_text)
+                                await self.download_files(page, f"data/menurut_kode_hs/hs_2_digit/{year}/{self.hs_digit_text.lower().replace(" ", "_")}/{pelabuhan_option.lower().replace(" ", "_")}/{negara_option.lower().replace(" ", "_")}/xlsx/", self.bulan_text)
+
+                                await page.locator('#ss > div.mt-4.rounded-lg.bg-white.w-full.flex-col.justify-start.items-start.gap-4.inline-flex.p-4 > div:nth-child(7) > div > div > div > div.css-1wy0on6 > div:nth-child(1)').click() #? bulan X
                             await page.locator('#ss > div.mt-4.rounded-lg.bg-white.w-full.flex-col.justify-start.items-start.gap-4.inline-flex.p-4 > div:nth-child(6) > div > div > div > div.css-1wy0on6 > div:nth-child(1)').click()# ? X negara
                         await page.locator('#ss > div.mt-4.rounded-lg.bg-white.w-full.flex-col.justify-start.items-start.gap-4.inline-flex.p-4 > div:nth-child(5) > div > div > div > div.css-1wy0on6 > div:nth-child(1)').click() #? X pelabuhan
 
@@ -285,6 +323,7 @@ class Process:
                             
 
                         print(await full_locator.inner_text())
+                        self.hs_full_text = await full_locator.inner_text()
                         await full_locator.click()
 
                         await page.locator("body").press("Escape")
@@ -293,7 +332,33 @@ class Process:
                         # ! lanjut proses disini
                         # ....
 
-                        
+                        _, pelabuhan_list, _ = await self.check_table(page, "hs_full")
+
+                        for pelabuhan_option in pelabuhan_list:
+                            print(f"PELABUHAN = {pelabuhan_option}")
+                            await self.__pelabuhan_pick(page, pelabuhan_option)
+
+                            negara_list, _, _ = await self.check_table(page, "hs_full")
+
+                            for negara_option in negara_list:
+                                print(f"NEGARA = {negara_option}")
+                                await self.__negara_pick(page, negara_option)
+
+                                # ! lanjut proses disini
+                                # ! ERROR DISNI
+                                # ....
+                                _, _, bulan_list = await self.check_table(page, "hs_full")
+                                for bulan_option in bulan_list:
+                                    print(f"BULAN = {bulan_option}")
+                                    await self.bulan_process(page, bulan_option)
+
+                                    self.bulan_text = bulan_option.split()[1]
+                                    print(self.bulan_text)
+                                    await self.download_files(page, f"data/menurut_kode_hs/hs_full/{year}/{self.hs_full_text.split("[")[1].split("]")[0].lower().replace(" ", "_")}/{pelabuhan_option.lower().replace(" ", "_")}/{negara_option.lower().replace(" ", "_")}/xlsx/", self.bulan_text)
+
+                                    await page.locator('#ss > div.mt-4.rounded-lg.bg-white.w-full.flex-col.justify-start.items-start.gap-4.inline-flex.p-4 > div:nth-child(7) > div > div > div > div.css-1wy0on6 > div:nth-child(1)').click() #? bulan X
+                                await page.locator('#ss > div.mt-4.rounded-lg.bg-white.w-full.flex-col.justify-start.items-start.gap-4.inline-flex.p-4 > div:nth-child(6) > div > div > div > div.css-1wy0on6 > div:nth-child(1)').click()# ? X negara
+                            await page.locator('#ss > div.mt-4.rounded-lg.bg-white.w-full.flex-col.justify-start.items-start.gap-4.inline-flex.p-4 > div:nth-child(5) > div > div > div > div.css-1wy0on6 > div:nth-child(1)').click() #? X pelabuhan
 
                         await page.locator('//*[@id="ss"]/div[2]/div[4]/div[2]/div/div/div[2]/div[1]').click() #? X
 
@@ -319,8 +384,9 @@ class Process:
     async def check_table(self, page, agregasi):
         """Get list of option negara, pelabuhan, and bulan who has table data"""
         await page.get_by_role("button", name="Buat Tabel").click()
-        await asyncio.sleep(2)
-        
+
+        await asyncio.sleep(5)
+
         try:
             html_content = await page.content()
             soup = BeautifulSoup(html_content, "html.parser")
@@ -333,13 +399,13 @@ class Process:
                 
                 if "hs" in agregasi:
                     list_negara = list(set(negara.get_text(strip=True) for negara in table_data.select('thead:nth-child(1) > tr:nth-child(1) > th.pvtColLabel')))
-                    print(list_negara)
+                    # print(list_negara)
 
                     list_pelabuhan = list(set(pelabuhan.get_text(strip=True) for pelabuhan in table_data.select('thead:nth-child(1) > tr:nth-child(2) > th.pvtColLabel')))
-                    print(list_pelabuhan)
+                    # print(list_pelabuhan)
 
                     list_bulan = list(set(bulan.get_text(strip=True) for bulan in table_data.select('thead:nth-child(1) > tr:nth-child(3) > th.pvtColLabel')))
-                    print(list_bulan)
+                    # print(list_bulan)
 
                     return list_negara, list_pelabuhan, list_bulan
                 
@@ -365,40 +431,81 @@ class Process:
 
 
 
-
-
-
-
     async def bulan_process(self, page, bulan):
-        """process category bulan"""
-        list_bulan_transforms = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"]
-        
-        for bulan_transform in list_bulan_transforms:
-            if bulan_transform in bulan:
-                bulan_option = bulan_transform
+        bulan_option = bulan.split()[1].strip()
+        if bulan_option:
 
-        print(bulan_option)
+            print(f"in bulan_process {bulan_option}")
+            try:
+                await page.locator("div").filter(has_text=re.compile(r"^Pilih Bulan$")).nth(1).click()
+                bulan_locator = page.get_by_role("option", name=bulan_option, exact=True)
+                await bulan_locator.click()
+
+                await page.locator("body").press("Escape")
+                await page.get_by_role("button", name="Buat Tabel").click()
+                await asyncio.sleep(2)
+
+            except Exception as e:
+                print(f"Error download_file: {e}")
+                raise FailedInputCategory("Failed to select bulan")
+
+
+
+
+    async def download_files(self, page, download_path, bulan):
+        """Download xlx files"""
+        os.makedirs(download_path, exist_ok=True)
 
         try:
-            await page.locator("div").filter(has_text=re.compile(r"^Pilih Bulan$")).nth(1).click()
-            bulan_locator = page.get_by_role("option", name=bulan_option, exact=True)
-            await bulan_locator.click()
 
-            await page.locator("body").press("Escape")
-            await page.get_by_role("button", name="Buat Tabel").click()
+            dropdown_list_name = ['Nilai / Net Value (US $)', 'Berat / Net Weight (KG)']
+            for dropdown_name in dropdown_list_name:
+                await page.locator("#ss > div:nth-child(3) > div > div.overflow-x-scroll > table > tbody > tr:nth-child(2) > td.pvtVals > div > div.pvtDropdownValue").click()
+                await asyncio.sleep(1)
+                await page.get_by_role("button", name=dropdown_name, exact=True).click()
+                await asyncio.sleep(1)
+                await page.get_by_role("button", name="Buat Tabel", exact=True).click()
+                await asyncio.sleep(1)
 
-            await page.locator('#ss > div.mt-4.rounded-lg.bg-white.w-full.flex-col.justify-start.items-start.gap-4.inline-flex.p-4 > div:nth-child(7) > div > div > div > div.css-1wy0on6 > div:nth-child(1)').click() #? X
 
+                await page.locator("#ss").get_by_role("button", name="Unduh").wait_for(state="visible", timeout=60000)
+                async with page.expect_download() as download_info:
+                    await page.locator("#ss").get_by_role("button", name="Unduh").click()
+                downloads = await download_info.value
+
+
+                if "KG" in dropdown_name: filename = f"{bulan}_(kg).xlsx"
+                elif "US" in dropdown_name: filename = f"{bulan}_(us$).xlsx"
+                file_path = os.path.join(download_path, filename)
+                await downloads.save_as(file_path)
+
+
+        except TimeoutError:
+            print("Button timeout reached")
+            pass
         except Exception as e:
-            print(f"Error download_file: {e}")
-            raise FailedInputCategory("Failed to select bulan")
+            print(e)
+            raise CantDownloadFiles
+        
 
 
 
+    async def find_elements(page):
+        skeleton_element = await page.query_selector('div.skeleton-box')
+
+        if skeleton_element:
+            print("skeleton div ditemukan")
+        else:
+            print("skeleton not found")
+        
+        # Mencari elemen lain
+        element1 = await page.query_selector('div.mt-4.w-full.p-4.rounded-lg.bg-white')
+        element2 = await page.query_selector('div.mt-4.w-full.h-96')
+
+        if element1 or element2:
+            print("salah satu elemen lainnya ditemukan")
+        else:
+            print("tidak ada elemen lain yang ditemukan")
 
 
 
-
-
-    async def download_files(self, page):
-        pass

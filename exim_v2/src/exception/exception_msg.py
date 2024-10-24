@@ -17,3 +17,7 @@ class FailedInputCategory(Exception):
 class CantFoundOption(Exception):
     def __str__(self) -> str:
         return "Cant found option, try again!"
+    
+class CantDownloadFiles(Exception):
+    def __str__(self) -> str:
+        return "Cant Download Files!"
