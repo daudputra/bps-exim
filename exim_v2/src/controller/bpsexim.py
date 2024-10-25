@@ -14,6 +14,7 @@ class BpsExim:
     def __init__(self, headless, **kwargs) -> None:
         self.url = "https://bps.go.id/id/exim"
         self.domain = "bps.go.id"
+        self.desc = ""
 
         # ? arguments
         self.headless = headless #? headless mode
@@ -25,12 +26,15 @@ class BpsExim:
 
     async def scrape_year(self, context):
         """ Get year to do multiple tasks """
+
         try:
             page = await context.new_page()
             await page.goto(self.url)
 
-            await Process().input_exim(self.exim, page)
-            await Process().input_agregasi(self.agregasi, page)
+            processing = Process(self.exim, self.desc)
+
+            await processing.input_exim(page)
+            await processing.input_agregasi(self.agregasi, page)
 
             await page.locator("div").filter(has_text=re.compile(r"^Pilih Tahun$")).nth(1).click()
 
@@ -72,12 +76,11 @@ class BpsExim:
 
                 # ? ignore image and media to compress memory and cpu usage
                 await context.route("**/*", lambda route: route.abort() if route.request.resource_type in ["image", "media", "stylesheet"] else route.continue_())    
-                # await context.route("**/*", lambda route: route.abort() if route.request.resource_type in ["image", "media", "svg", "gif"] else route.continue_())
 
 
 
-                # list_years = await self.scrape_year(context)
-                list_years = ['2023']
+                list_years = await self.scrape_year(context)
+                # list_years = ['2023']
 
 
                 # ! Do multiple tasks
@@ -107,26 +110,32 @@ class BpsExim:
                 page = await context.new_page()  
                 await page.goto(self.url)
 
+                desc = await page.locator(".text-amber-700").inner_text()
+                if desc:
+                    desc = desc.strip()
 
-                await Process().input_exim(self.exim, page)
-                await Process().input_agregasi(self.agregasi, page)
+
+                processing = Process(self.exim, desc)
+
+                await processing.input_exim(page)
+                await processing.input_agregasi(self.agregasi, page)
 
                 await page.locator("div").filter(has_text=re.compile(r"^Pilih Tahun$")).nth(1).click()
                 await page.get_by_role("option", name=year).click()
                 await page.locator("body").press("Escape")
 
                 if self.agregasi == "negara":
-                    await Process().negara_process(page, year)
+                    await processing.negara_process(page, year)
                 elif self.agregasi == "pelabuhan":
-                    await Process().pelabuhan_process(page, year)
+                    await processing.pelabuhan_process(page, year)
                 elif "hs" in self.agregasi:
-                    await Process().kode_hs_process(page, self.agregasi, year)
+                    await processing.kode_hs_process(page, self.agregasi, year)
                 else:
                     print(f"Invalid agregasi value: {self.agregasi}")
                     return
 
                 await asyncio.sleep(5)
-                print(f"Process() Tab {year} Completed Successfully!")
+                print(f"processing Tab {year} Completed Successfully!")
                 break 
 
             except Exception as e:
