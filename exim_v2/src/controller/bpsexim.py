@@ -2,7 +2,7 @@ import asyncio
 import re
 
 from ..exception import CantLoadWebPage
-from ..helper import Process
+from ..helper import Process, log_message
 
 from bs4 import BeautifulSoup
 from playwright.async_api import async_playwright
@@ -15,6 +15,7 @@ class BpsExim:
         self.url = "https://bps.go.id/id/exim"
         self.domain = "bps.go.id"
         self.desc = ""
+        self.path = ""
 
         # ? arguments
         self.headless = headless #? headless mode
@@ -26,6 +27,7 @@ class BpsExim:
 
     async def scrape_year(self, context):
         """ Get year to do multiple tasks """
+        await log_message("DEBUG", "logs/debug.log", "Start taking the list of available years")
 
         try:
             page = await context.new_page()
@@ -43,7 +45,7 @@ class BpsExim:
             listbox = soup.find('div', class_='css-qr46ko')
             list_year = [option.get_text(strip=True) for option in listbox.find_all('div')]
             
-            print(f"Got {len(list_year)} Year : ", list_year)
+            await log_message("DEBUG", "logs/debug.log", f"Got {len(list_year)} Year : {list_year}")
             await asyncio.sleep(2)
 
             return list_year
@@ -77,19 +79,14 @@ class BpsExim:
                 # ? ignore image and media to compress memory and cpu usage
                 await context.route("**/*", lambda route: route.abort() if route.request.resource_type in ["image", "media", "stylesheet"] else route.continue_())    
 
-
-
-                list_years = await self.scrape_year(context)
-                # list_years = ['2023']
-
+                # list_years = await self.scrape_year(context)
+                list_years = ["2024"]
 
                 # ! Do multiple tasks
                 batch_size =  self.batch if self.batch != None else len(list_years)
                 for i in range(0, len(list_years), batch_size):
                     tasks = [self.process_category(context, year) for year in list_years[i:i + batch_size]]
                     await asyncio.gather(*tasks, return_exceptions=True)  
-
-                
 
         except Exception as e:
             print(f"An error occurred: {str(e)}")
@@ -100,6 +97,8 @@ class BpsExim:
 
     async def process_category(self, context, year):
         """ Start Process by aggregasi """
+
+        await log_message("DEBUG", "logs/debug.log", f"Start Process Task {year}")
 
         page = None 
         max_attempts = self.max_attempts

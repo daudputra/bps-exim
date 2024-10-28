@@ -14,7 +14,6 @@ class SaveJson:
 
 
     async def save_json_local(self, filename, folder_path):
-        # Mengonversi path menjadi format yang sesuai dengan OS, misalnya mengubah '\' ke '/' jika perlu
         directory = Path(os.path.normpath(os.path.join("data", folder_path)))
         
         directory.mkdir(parents=True, exist_ok=True)
@@ -24,16 +23,6 @@ class SaveJson:
         async with aiofiles.open(file_path, 'w', encoding='utf-8') as json_file:
             data = self.mapping()
             await json_file.write(json.dumps(data, ensure_ascii=False))
-
-    # async def save_json_local(self, filename, *folders):
-    #     directory = os.path.join('data', *folders)
-        
-    #     os.makedirs(directory, exist_ok=True)
-    #     file_path = os.path.join(directory, filename)
-        
-    #     async with aiofiles.open(file_path, 'w', encoding='utf-8') as json_file:
-    #         data = self.mapping()
-    #         await json_file.write(json.dumps(data, ensure_ascii=False))
 
 
     def mapping(self):

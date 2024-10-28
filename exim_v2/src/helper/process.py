@@ -1,6 +1,3 @@
-# body > div > div > h2 
-
-
 import re
 import asyncio
 import os
@@ -24,6 +21,11 @@ class Process:
         self.agregasi_text = None
         self.jenis_hs = None
         self.desc = desc
+        self.kode_hs_text = None
+        self.hs_digit_text = None
+        self.hs_full_text = None 
+
+
 
 
 
@@ -69,9 +71,7 @@ class Process:
             options = await page.query_selector_all(f"role=option[name={negara}]")
             for option in options:
                 await option.click()
-                # print(await option.inner_text())
         else:
-            # print(await negara_locators.inner_text())
             await negara_locators.click()
 
         await page.locator("body").press("Escape")
@@ -90,9 +90,7 @@ class Process:
             options = await page.query_selector_all(f"role=option[name='{pelabuhan}']")
             for option in options:
                 await option.click()
-                # print(await option.inner_text())
         else:
-            # print(await pelabuhan_locators.inner_text())
             await pelabuhan_locators.click()
 
         await page.locator("body").press("Escape")
@@ -131,6 +129,13 @@ class Process:
 
     async def return_datas(self):
         """Return Data"""
+
+        agregasi_list = {
+            "hs_full" : "Menurut Kode HS",
+            "hs_digit" : "Menurut Kode HS",
+        }
+        agregasi_text_clean = agregasi_list.get(self.agregasi_text)
+
         xlsx_names = [
             f"{self.bulan_text}_(us$).xlsx",
             f"{self.bulan_text}_(kg).xlsx"
@@ -140,7 +145,8 @@ class Process:
         if "hs" in self.agregasi_text:
             return {
                 "tipe_data" : self.exim_text,
-                "agregasi" : self.agregasi_text,
+                "agregasi" : agregasi_text_clean,
+                "kode_hs" : self.hs_digit_text if "digit" in self.agregasi_text else self.hs_full_text.split(" - ")[1],
                 "tahun" : self.year_text,
                 "negara" : self.negara_text,
                 "pelabuhan" : self.pelabuhan_text,
@@ -214,9 +220,21 @@ class Process:
                         await self.bulan_process(page, bulan_option)
                         await self.download_files(page, f"data/{path_files}/xlsx/", self.bulan_text)
 
+
+                        try:
+                            path_s3 = list(map(lambda x: x.lower().replace(" ", "_").replace(",",""),[
+                                f"s3://ai-pipeline-raw-data/data/data_statistics/bps/data_ekspor_impor_nasional/{self.exim_text}/menurut_negara/{self.year_text}/{self.negara_text}/json/{self.bulan_text}.json",
+                                f"s3://ai-pipeline-raw-data/data/data_statistics/bps/data_ekspor_impor_nasional/{self.exim_text}/menurut_negara/{self.year_text}/{self.negara_text}/xlsx/{self.bulan_text}_(kg).xlsx",
+                                f"s3://ai-pipeline-raw-data/data/data_statistics/bps/data_ekspor_impor_nasional/{self.exim_text}/menurut_negara/{self.year_text}/{self.negara_text}/xlsx/{self.bulan_text}_(us$).xlsx"
+                                ])) 
+                        except Exception as e:
+                            print(f"Error in path s3: {e}")
+
+
+
                         try:
                             data = await self.return_datas()
-                            setup_json = SaveJson(self.year_text, data, "", self.desc)
+                            setup_json = SaveJson(self.year_text, data, path_s3, self.desc)
                             await setup_json.save_json_local(f"{self.bulan_text.lower()}.json", f"{path_files}/json/")
                         except Exception as e:
                             #! ganti exception ini
@@ -280,8 +298,18 @@ class Process:
 
 
                         try:
+                            path_s3 = list(map(lambda x: x.lower().replace(" ", "_").replace(",",""),[
+                                f"s3://ai-pipeline-raw-data/data/data_statistics/bps/data_ekspor_impor_nasional/{self.exim_text}/menurut_negara/{self.year_text}/{self.pelabuhan_text}/json/{self.bulan_text}.json",
+                                f"s3://ai-pipeline-raw-data/data/data_statistics/bps/data_ekspor_impor_nasional/{self.exim_text}/menurut_negara/{self.year_text}/{self.pelabuhan_text}/xlsx/{self.bulan_text}_(kg).xlsx",
+                                f"s3://ai-pipeline-raw-data/data/data_statistics/bps/data_ekspor_impor_nasional/{self.exim_text}/menurut_negara/{self.year_text}/{self.pelabuhan_text}/xlsx/{self.bulan_text}_(us$).xlsx"
+                                ])) 
+                        except Exception as e:
+                            print(f"Error in path s3: {e}")
+
+
+                        try:
                             data = await self.return_datas()
-                            setup_json = SaveJson(self.year_text, data, "", self.desc)
+                            setup_json = SaveJson(self.year_text, data, path_s3, self.desc)
                             await setup_json.save_json_local(f"{self.bulan_text.lower()}.json", f"{path_files}/json/")
                         except:
                             #! ganti exception ini
@@ -363,6 +391,15 @@ class Process:
                                     # ? path to save files
                                     path_files = f"{self.exim_text}/menurut_kode_hs/hs_2_digit/{year}/{self.hs_digit_text.lower().replace(" ", "_")}/{pelabuhan_option.lower().replace(" ", "_")}/{negara_option.lower().replace(" ", "_")}/"
 
+                                    try:
+                                        path_s3 = list(map(lambda x: x.lower().replace(" ", "_").replace(",",""),[
+                                            f"s3://ai-pipeline-raw-data/data/data_statistics/bps/data_ekspor_impor_nasional/{self.exim_text}/menurut_kode_hs/{self.jenis_hs}/{self.year_text}/{self.hs_digit_text}/{self.pelabuhan_text}/{self.negara_text}/json/{self.bulan_text}.json",
+                                            f"s3://ai-pipeline-raw-data/data/data_statistics/bps/data_ekspor_impor_nasional/{self.exim_text}/menurut_kode_hs/{self.jenis_hs}/{self.year_text}/{self.hs_digit_text}/{self.pelabuhan_text}/{self.negara_text}/xlsx/{self.bulan_text}_(kg).xlsx",
+                                            f"s3://ai-pipeline-raw-data/data/data_statistics/bps/data_ekspor_impor_nasional/{self.exim_text}/menurut_kode_hs/{self.jenis_hs}/{self.year_text}/{self.hs_digit_text}/{self.pelabuhan_text}/{self.negara_text}/xlsx/{self.bulan_text}_(us$).xlsx"
+                                            ])) 
+                                    except Exception as e:
+                                        print(f"Error in path s3: {e}")
+
                                     # ? datas to data
                                     self.pelabuhan_text = pelabuhan_option
                                     self.negara_text = negara_option
@@ -371,14 +408,14 @@ class Process:
 
                                     await self.download_files(page, f"data/{path_files}/xlsx/", self.bulan_text)
 
-
                                     try:
                                         data = await self.return_datas()
-                                        setup_json = SaveJson(self.year_text, data, "", self.desc)
+                                        setup_json = SaveJson(self.year_text, data, path_s3, self.desc)
                                         await setup_json.save_json_local(f"{self.bulan_text.lower()}.json", f"{path_files}/json/")
                                     except:
                                         #! ganti exception ini
                                         print("Error saving json")
+
 
                                     await page.locator('#ss > div.mt-4.rounded-lg.bg-white.w-full.flex-col.justify-start.items-start.gap-4.inline-flex.p-4 > div:nth-child(7) > div > div > div > div.css-1wy0on6 > div:nth-child(1)').click() #? bulan X
                                 await page.locator('#ss > div.mt-4.rounded-lg.bg-white.w-full.flex-col.justify-start.items-start.gap-4.inline-flex.p-4 > div:nth-child(6) > div > div > div > div.css-1wy0on6 > div:nth-child(1)').click()# ? X negara
@@ -406,7 +443,6 @@ class Process:
 
                         await page.locator("div").filter(has_text=re.compile(r"^Ketikkan Kode HS$")).nth(1).click()
                         await asyncio.sleep(2)
-                        # full_locator = page.locator(f"#react-select-10-option-{index}")
                         full_locator = page.locator(f"//html/body/div[2]/div[2]/div[2]/div[1]/div/div[2]/div[4]/div[2]/div/div[2]/div/div[{index+1}]")
 
                         if index != 0 and index % 10 == 0:
@@ -459,8 +495,17 @@ class Process:
 
 
                                             try:
+                                                path_s3 = list(map(lambda x: x.lower().replace(" ", "_").replace(",",""),[
+                                                    f"s3://ai-pipeline-raw-data/data/data_statistics/bps/data_ekspor_impor_nasional/{self.exim_text}/menurut_kode_hs/{self.jenis_hs}/{self.year_text}/{self.hs_full_text.split(" - ")[1]}/{self.pelabuhan_text}/{self.negara_text}/json/{self.bulan_text}.json",
+                                                    f"s3://ai-pipeline-raw-data/data/data_statistics/bps/data_ekspor_impor_nasional/{self.exim_text}/menurut_kode_hs/{self.jenis_hs}/{self.year_text}/{self.hs_full_text.split(" - ")[1]}/{self.pelabuhan_text}/{self.negara_text}/xlsx/{self.bulan_text}_(kg).xlsx",
+                                                    f"s3://ai-pipeline-raw-data/data/data_statistics/bps/data_ekspor_impor_nasional/{self.exim_text}/menurut_kode_hs/{self.jenis_hs}/{self.year_text}/{self.hs_full_text.split(" - ")[1]}/{self.pelabuhan_text}/{self.negara_text}/xlsx/{self.bulan_text}_(us$).xlsx"
+                                                    ])) 
+                                            except Exception as e:
+                                                print(f"Error in path s3: {e}")
+
+                                            try:
                                                 data = await self.return_datas()
-                                                setup_json = SaveJson(self.year_text, data, "", self.desc)
+                                                setup_json = SaveJson(self.year_text, data, path_s3, self.desc)
                                                 await setup_json.save_json_local(f"{self.bulan_text.lower()}.json", f"{path_files}/json/")
                                             except:
                                                 #! ganti exception ini
@@ -597,25 +642,3 @@ class Process:
         except Exception as e:
             print(e)
             raise CantDownloadFiles
-
-
-
-    async def find_elements(page):
-        skeleton_element = await page.query_selector('div.skeleton-box')
-
-        if skeleton_element:
-            print("skeleton div ditemukan")
-        else:
-            print("skeleton not found")
-        
-        # Mencari elemen lain
-        element1 = await page.query_selector('div.mt-4.w-full.p-4.rounded-lg.bg-white')
-        element2 = await page.query_selector('div.mt-4.w-full.h-96')
-
-        if element1 or element2:
-            print("salah satu elemen lainnya ditemukan")
-        else:
-            print("tidak ada elemen lain yang ditemukan")
-
-
-
